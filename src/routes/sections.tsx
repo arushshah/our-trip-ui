@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react';
-import { Outlet, Navigate, useRoutes } from 'react-router-dom';
+import { Outlet, useRoutes } from 'react-router-dom';
 
 import Box from '@mui/material/Box';
 import LinearProgress, { linearProgressClasses } from '@mui/material/LinearProgress';
@@ -7,15 +7,23 @@ import LinearProgress, { linearProgressClasses } from '@mui/material/LinearProgr
 import { varAlpha } from 'src/theme/styles';
 import { AuthLayout } from 'src/layouts/auth';
 import { DashboardLayout } from 'src/layouts/dashboard';
+import ProtectedRoute from 'src/routes/components/ProtectedRoute'; // Import the ProtectedRoute component
+import { AuthProvider } from 'src/context/AuthContext'; // Import the AuthProvider
 
 // ----------------------------------------------------------------------
 
-export const HomePage = lazy(() => import('src/pages/home'));
-export const BlogPage = lazy(() => import('src/pages/blog'));
-export const UserPage = lazy(() => import('src/pages/user'));
-export const SignInPage = lazy(() => import('src/pages/sign-in'));
-export const ProductsPage = lazy(() => import('src/pages/products'));
-export const Page404 = lazy(() => import('src/pages/page-not-found'));
+const HomePage = lazy(() => import('src/pages/home'));
+const BlogPage = lazy(() => import('src/pages/blog'));
+const UserPage = lazy(() => import('src/pages/user'));
+const SignInPage = lazy(() => import('src/pages/sign-in'));
+const ProductsPage = lazy(() => import('src/pages/products'));
+const Page404 = lazy(() => import('src/pages/page-not-found'));
+const CreateAccountPage = lazy(() => import('src/pages/create-account'));
+const CreateTripPage = lazy(() => import('src/pages/create-trip'));
+const UpdateTripPage = lazy(() => import('src/pages/update-trip'));
+const ViewTripPage = lazy(() => import('src/pages/view-trip'));
+const AccommodationsPage = lazy(() => import('src/pages/all-accommodations'));
+const CreateAccommodationPage = lazy(() => import('src/pages/create-accommodation'));
 
 // ----------------------------------------------------------------------
 
@@ -36,34 +44,60 @@ export function Router() {
   return useRoutes([
     {
       element: (
-        <DashboardLayout>
-          <Suspense fallback={renderFallback}>
-            <Outlet />
-          </Suspense>
-        </DashboardLayout>
+        <AuthProvider>
+          <ProtectedRoute>
+            <DashboardLayout>
+              <Suspense fallback={renderFallback}>
+                <Outlet />
+              </Suspense>
+            </DashboardLayout>
+          </ProtectedRoute>
+        </AuthProvider>
       ),
+      // Add routes here
       children: [
         { element: <HomePage />, index: true },
         { path: 'user', element: <UserPage /> },
         { path: 'products', element: <ProductsPage /> },
         { path: 'blog', element: <BlogPage /> },
+        { path: 'create-trip', element: <CreateTripPage /> },
+        { path: 'view-trip/:trip_id', element: <ViewTripPage /> },
+        { path: 'update-trip/:trip_id', element: <UpdateTripPage /> },
+        { path: 'accommodations', element: <AccommodationsPage /> },
+        { path: 'create-accommodation', element: <CreateAccommodationPage /> },
       ],
     },
     {
       path: 'sign-in',
       element: (
-        <AuthLayout>
-          <SignInPage />
-        </AuthLayout>
+        <AuthProvider>
+          <AuthLayout>
+            <Suspense fallback={renderFallback}>
+              <SignInPage />
+            </Suspense>
+          </AuthLayout>
+        </AuthProvider>
       ),
     },
     {
-      path: '404',
-      element: <Page404 />,
+      path: 'create-account',
+      element: (
+        <AuthProvider>
+          <AuthLayout>
+            <Suspense fallback={renderFallback}>
+              <CreateAccountPage />
+            </Suspense>
+          </AuthLayout>
+        </AuthProvider>
+      ),
     },
     {
       path: '*',
-      element: <Navigate to="/404" replace />,
+      element: (
+        <Suspense fallback={renderFallback}>
+          <Page404 />
+        </Suspense>
+      ),
     },
   ]);
 }
