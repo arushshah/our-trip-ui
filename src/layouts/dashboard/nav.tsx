@@ -51,7 +51,7 @@ export function NavDesktop({
         display: 'none',
         position: 'fixed',
         flexDirection: 'column',
-        bgcolor: 'var(--layout-nav-bg)',
+        backgroundColor: '#222831',
         zIndex: 'var(--layout-nav-zIndex)',
         width: 'var(--layout-nav-vertical-width)',
         borderRight: `1px solid var(--layout-nav-border-color, ${varAlpha(theme.vars.palette.grey['500Channel'], 0.12)})`,
@@ -93,7 +93,7 @@ export function NavMobile({
           pt: 2.5,
           px: 2.5,
           overflow: 'unset',
-          bgcolor: 'var(--layout-nav-bg)',
+          bgcolor: '#222831',
           width: 'var(--layout-nav-mobile-width)',
           ...sx,
         },
@@ -112,6 +112,7 @@ export function NavContent({ data, slots, sx }: NavContentProps) {
   return (
     <>
       <Logo />
+      <br />
 
       {slots?.topArea}
 
@@ -130,11 +131,12 @@ export function NavContent({ data, slots, sx }: NavContentProps) {
                     sx={{
                       pl: 2,
                       py: 1,
-                      gap: 2,
+                      gap: 4,
                       pr: 1.5,
                       borderRadius: 0.75,
                       typography: 'body2',
                       fontWeight: 'fontWeightMedium',
+                      fontSize: '1.2rem',
                       color: 'var(--layout-nav-item-color)',
                       minHeight: 'var(--layout-nav-item-height)',
                       ...(isActived && {
@@ -151,12 +153,13 @@ export function NavContent({ data, slots, sx }: NavContentProps) {
                       {item.icon}
                     </Box>
 
-                    <Box component="span" flexGrow={1}>
+                    <Box component="span" flexGrow={1} sx={{color: 'white'}}>
                       {item.title}
                     </Box>
 
-                    {item.info && item.info}
                   </ListItemButton>
+                  <br />
+                  <br />
                 </ListItem>
               );
             })}

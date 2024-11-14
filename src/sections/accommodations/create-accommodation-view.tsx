@@ -1,21 +1,18 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { Box, Typography, Button, TextField, Snackbar, Alert } from '@mui/material';
-import { jwtDecode } from 'jwt-decode';
+import BackButtonView from 'src/layouts/components/back-button';
+import { useParams } from 'react-router-dom';
+import {apiUrl} from 'src/config';
 
 const CreateAccommodationView: React.FC = () => {
+  const { trip_id } = useParams<{ trip_id: string }>();
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [presignedUrl, setPresignedUrl] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-    const token = localStorage.getItem('access_token');
-    if (!token) {
-      throw new Error('No access token found');
-    }
-    const decodedToken = jwtDecode(token);
-    const userId = decodedToken.sub;
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files[0]) {
       setFile(event.target.files[0]);
@@ -33,12 +30,20 @@ const CreateAccommodationView: React.FC = () => {
     setUploading(true);
 
     try {
-      const response = await axios.post('http://127.0.0.1:5000/user_uploads/generate-presigned-url', {
-        file_name: file.name,
-        user_username: userId,
-        file_type: file.type,
-        trip_id: '1' // Replace with actual trip ID
-      });
+      const response = await axios.post(`${apiUrl}/user_uploads/generate-presigned-url`,
+        {
+          file_name: file.name,
+          file_type: file.type,
+          trip_id,
+          url_type: "upload",
+          document_category: "accommodation"
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('idToken')}`,
+          },
+        }
+      );
 
       const { url } = response.data;
 
@@ -48,11 +53,6 @@ const CreateAccommodationView: React.FC = () => {
 
       setPresignedUrl(url);
 
-      // Log the presigned URL and file details
-      console.log('Presigned URL:', url);
-      console.log('File:', file);
-      console.log('Content-Type:', file.type);
-
       // Upload the file to S3 using PUT request
       await axios.put(url, file, {
         headers: {
@@ -60,7 +60,6 @@ const CreateAccommodationView: React.FC = () => {
         },
       });
 
-      console.log('File uploaded successfully');
       setSuccessMessage('File uploaded successfully');
     } catch (error) {
       console.error('Error uploading file:', error);
@@ -81,9 +80,10 @@ const CreateAccommodationView: React.FC = () => {
   };
 
   return (
-    <Box sx={{ p: 3 }}>
+    <Box sx={{ p: 3, color: 'white' }}>
+        <BackButtonView />
       <Typography variant="h4" sx={{ mb: 3 }}>
-        Add Accommodation Details
+        Add Document
       </Typography>
       <form onSubmit={handleSubmit}>
         <TextField
@@ -93,6 +93,9 @@ const CreateAccommodationView: React.FC = () => {
           sx={{ mb: 2 }}
           InputLabelProps={{
             shrink: true,
+          }}
+          InputProps={{
+            style: { color: '#EEEEEE' },
           }}
         />
         <Button type="submit" variant="contained" color="primary" disabled={uploading}>

@@ -32,6 +32,7 @@ export function LayoutSection({
     <GlobalStyles
       styles={{
         body: {
+          backgroundColor: '#222831',
           ...baseVars(theme),
           ...cssVars,
         },
@@ -43,7 +44,7 @@ export function LayoutSection({
     <>
       {inputGlobalStyles}
 
-      <Box id="root__layout" className={layoutClasses.root} sx={sx}>
+      <Box id="root__layout" className={layoutClasses.root} sx={{ ...sx, backgroundColor: '#222831' }}>
         {sidebarSection}
         <Box
           display="flex"

@@ -1,11 +1,10 @@
-import React, { useEffect, useState } from 'react';
-import { Link as RouterLink } from 'react-router-dom';
-import { Button, Grid, Typography } from '@mui/material';
-
+import { useEffect, useState } from 'react';
+import { Link, Link as RouterLink } from 'react-router-dom';
+import { Box, Grid, Typography } from '@mui/material';
+import {apiUrl} from 'src/config';
 import { _tasks, _posts, _timeline } from 'src/_mock';
 import { DashboardContent } from 'src/layouts/dashboard';
-
-import { jwtDecode } from 'jwt-decode';
+import { getAuth } from 'firebase/auth';
 import { UserTripEntry } from './user-trip-entry';
 import { CreateTripEntry } from './create-trip-entry';
 
@@ -15,32 +14,32 @@ interface UserTrip {
   trip_end_date: string;
   trip_id: string;
   trip_description: string;
-  // Add other properties as needed
-}
-interface DecodedToken {
-  sub: string;
-  // Add other properties as needed
+  rsvp_status: string;
 }
 
 export function AllUserTripsView() {
 
   const [userTrips, setUserTrips] = useState<UserTrip[]>([]);
+  const [userId, setUserId] = useState<string>('');
 
   useEffect(() => {
 
     const fetchUserTrips = async () => {
       try {
-        const token = localStorage.getItem('access_token');
-        if (!token) {
-          throw new Error('No access token found');
-        }
-        const decodedToken: DecodedToken = jwtDecode(token);
-        const userId = decodedToken.sub;
+
+        const auth = getAuth();
+        const idToken = await auth.currentUser?.getIdToken();
         
-        const response = await fetch(`http://127.0.0.1:5000/trips/get-user-trips?user_id=${userId}`);
+        const response = await fetch(`${apiUrl}/trips/get-user-trips`, {
+          headers: {
+            Authorization: `Bearer ${idToken}`,
+          }
+        });
         const data = await response.json();
         
-        const formattedTrips = data.trips.map((trip: UserTrip) => ({
+        const trips = data.trips.filter((trip: UserTrip) => trip.rsvp_status !== 'INVITED');
+        
+        const formattedTrips = trips.map((trip: UserTrip) => ({
           ...trip,
           trip_start_date: new Date(trip.trip_start_date).toLocaleDateString('en-US', {
             month: 'short',
@@ -61,15 +60,22 @@ export function AllUserTripsView() {
       }
     };
     fetchUserTrips();
-  }, []);
+  }, [userId]);
   
   return (
+    <Box
+      sx={{
+        minHeight: '100vh',
+        backgroundColor: '#222831', // Set your desired background color here
+        color: "#EEEEEE",
+        padding: 3,
+      }}
+    >
     <DashboardContent maxWidth="xl">
       <Typography variant="h4" sx={{ mb: { xs: 3, md: 5 } }}>
-        Hi, Welcome back 👋
+        Hi, Welcome back {localStorage.getItem('first_name')}
       </Typography>
       
-       
       <Typography variant="h3" sx={{ mb: 2 }}>
         Here are your upcoming trips
       </Typography>
@@ -77,7 +83,9 @@ export function AllUserTripsView() {
       <Grid container spacing={3}>
         {userTrips.map((trip, index) => (
           <Grid item xs={12} sm={6} md={6} key={index}>
-            <UserTripEntry trip_id={trip.trip_id} title={trip.trip_name} trip_description={trip.trip_description} trip_start_date={trip.trip_start_date} trip_end_date={trip.trip_end_date}/>
+            <Link to={`/view-trip/${trip.trip_id}`} style={{ textDecoration: 'none' }}>
+            <UserTripEntry post={{ trip_id: trip.trip_id, title: trip.trip_name, trip_description: trip.trip_description, trip_start_date: trip.trip_start_date, trip_end_date: trip.trip_end_date, author: {name: "test", avatarUrl: "/assets/images/avatar/avatar-25.webp"} }} latestPost latestPostLarge/>
+            </Link>
           </Grid>
         ))}
       </Grid>
@@ -92,5 +100,6 @@ export function AllUserTripsView() {
       </Grid>
 
     </DashboardContent>
+    </Box>
   );
 }

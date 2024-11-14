@@ -1,92 +1,86 @@
-import React, { createContext, useState, useEffect, useCallback, useContext, useMemo, ReactNode } from 'react';
-import { useRouter } from 'src/routes/hooks';
+import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
+import { onAuthStateChanged, User, signOut as firebaseSignOut } from 'firebase/auth';
+import { useNavigate } from 'react-router-dom';
+import { auth } from 'src/firebaseConfig';
+import { jwtDecode } from 'jwt-decode';
+import { apiUrl } from 'src/config';
 
-interface AuthContextType {
-  isAuthenticated: boolean;
+interface AuthContextProps {
+  user: User | null;
   loading: boolean;
-  signIn: (username: string, password: string) => Promise<void>;
-  signOut: () => void;
+  signOut: () => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextType | null>(null);
+const AuthContext = createContext<AuthContextProps | undefined>(undefined);
 
 interface AuthProviderProps {
-  children: ReactNode;
+  children: React.ReactNode;
 }
 
-export const AuthProvider = ({ children }: AuthProviderProps) => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
+  const navigate = useNavigate();
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const router = useRouter();
-
-  const checkAuth = useCallback(async () => {
-    const token = localStorage.getItem('access_token');
-    if (token) {
-      try {
-        const response = await fetch('http://127.0.0.1:5000/users/validate-token', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-          },
-        });
-
-        if (response.ok) {
-          setIsAuthenticated(true);
-        } else {
-          localStorage.removeItem('access_token');
-        }
-      } catch (error) {
-        console.error('Error validating token:', error);
-        localStorage.removeItem('access_token');
-      }
-    }
-    setLoading(false);
-  }, []);
+  
 
   useEffect(() => {
-    checkAuth();
-  }, [checkAuth]);
+    const unsubscribe = onAuthStateChanged(auth, async (auth_user) => {
+      if (auth_user) {
+        try {
+          const token = await auth_user.getIdToken();
+          const currentTime = Date.now()/1000;
+          const decodedToken: any = jwtDecode(token);
 
-  const signIn = useCallback(async (username: string, password: string) => {
-    setLoading(true);
-    try {
-      const response = await fetch('http://127.0.0.1:5000/users/authenticate', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ user_username: username, user_password: password }),
-      });
+          if (decodedToken.exp < currentTime) {
+            await firebaseSignOut(auth);
+            setUser(null);
+            navigate('/sign-in')
+            return;
+          }
 
-      const result = await response.json();
-      setLoading(false);
+          const response = await fetch(`${apiUrl}/users/validate-user`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ phone_number: auth_user.phoneNumber })
+          });
 
-      if (response.ok) {
-        localStorage.setItem('access_token', result.access_token);
-        setIsAuthenticated(true);
-        router.push('/');
+          const data = await response.json();
+          if (response.status === 200) {
+            setUser(auth_user);
+            localStorage.setItem("first_name", data.firstName);
+            localStorage.setItem("last_name", data.lastName);
+          } else {
+            console.error('User entry does not exist in the database.');
+            await firebaseSignOut(auth);
+            setUser(null);
+          }
+        }
+        catch (error) {
+          console.error('Error validating user:', error);
+          await firebaseSignOut(auth);
+          setUser(null);
+        }
       } else {
-        throw new Error('Invalid username and/or password.');
+        setUser(null);
       }
-    } catch (error) {
       setLoading(false);
-      throw error;
-    }
-  }, [router]);
+    });
 
-  const signOut = useCallback(() => {
-    localStorage.removeItem('access_token');
-    setIsAuthenticated(false);
-    router.push('/sign-in');
-  }, [router]);
+    return () => unsubscribe();
+  }, [navigate]);
+
+  const signOut = useCallback(async () => {
+    await firebaseSignOut(auth);
+    setUser(null);
+  }, []);
 
   const value = useMemo(() => ({
-    isAuthenticated,
+    user,
     loading,
-    signIn,
-    signOut,
-  }), [isAuthenticated, loading, signIn, signOut]);
+    signOut
+  }), [user, loading, signOut]);
 
   return (
     <AuthContext.Provider value={value}>
@@ -97,7 +91,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (!context) {
+  if (context === undefined) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;

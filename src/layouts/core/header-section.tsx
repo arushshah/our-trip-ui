@@ -65,6 +65,7 @@ export function HeaderSection({
       sx={{
         boxShadow: 'none',
         zIndex: 'var(--layout-header-zIndex)',
+        backgroundColor: '#222831',
         ...sx,
       }}
       {...other}

@@ -1,12 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { Box, Typography, TextField, Button } from '@mui/material';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { jwtDecode } from 'jwt-decode';
-
-interface DecodedToken {
-  sub: string;
-  // Add other properties if needed
-}
+import BackButtonView from 'src/layouts/components/back-button';
+import GuestView from 'src/sections/guests/view/guest-view';
+import {apiUrl} from 'src/config';
 
 interface Trip {
   trip_name: string;
@@ -29,7 +26,11 @@ export function UpdateTripView() {
   useEffect(() => {
     const fetchTripDetails = async () => {
       try {
-        const response = await fetch(`http://127.0.0.1:5000/trips/get-trip?trip_id=${trip_id}`);
+        const response = await fetch(`${apiUrl}/trips/get-trip?trip_id=${trip_id}`, {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('idToken')}`,
+          },
+        });
         const data = await response.json();
         setTrip((prevTrip) => ({
           ...prevTrip,
@@ -52,17 +53,12 @@ export function UpdateTripView() {
     const formattedEndDate = new Date(trip.trip_end_date).toLocaleDateString();
 
     try {
-      const token = localStorage.getItem('access_token');
-      if (!token) {
-        throw new Error('No access token found');
-      }
-      const decodedToken: DecodedToken = jwtDecode(token);
-      const userId = decodedToken.sub;
 
-      const response = await fetch(`http://127.0.0.1:5000/trips/update-trip`, {
+      const response = await fetch(`${apiUrl}/trips/update-trip`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('idToken')}`,
         },
         body: JSON.stringify({
           trip_id,
@@ -70,12 +66,11 @@ export function UpdateTripView() {
           trip_description: trip.trip_description,
           trip_start_date: formattedStartDate,
           trip_end_date: formattedEndDate,
-          trip_hostname: userId,
         }),
       });
 
       if (response.ok) {
-        navigate('/', { state: { message: 'Trip Successfully Updated' } });
+        console.info("Updated trip successfully");
       } else {
         console.error('Failed to update trip');
       }
@@ -103,7 +98,8 @@ export function UpdateTripView() {
   }
 
   return (
-    <Box sx={{ p: 3 }}>
+    <Box sx={{ p: 3, color: '#EEEEEE' }}>
+      <BackButtonView />
       <Typography variant="h4" sx={{ mb: 3 }}>
         Edit Trip
       </Typography>
@@ -117,6 +113,9 @@ export function UpdateTripView() {
           value={trip.trip_name}
           onChange={handleChange}
           InputLabelProps={{ shrink: true }}
+          InputProps={{
+            style: { color: '#EEEEEE' },
+          }}
         />
         <TextField
           fullWidth
@@ -127,6 +126,9 @@ export function UpdateTripView() {
           value={trip.trip_description}
           onChange={handleChange}
           InputLabelProps={{ shrink: true }}
+          InputProps={{
+            style: { color: '#EEEEEE' },
+          }}
         />
         <TextField
           fullWidth
@@ -138,6 +140,9 @@ export function UpdateTripView() {
           sx={{ mb: 2 }}
           value={formatDate(trip.trip_start_date)}
           onChange={handleChange}
+          InputProps={{
+            style: { color: '#EEEEEE' },
+          }}
         />
         <TextField
           fullWidth
@@ -149,7 +154,11 @@ export function UpdateTripView() {
           sx={{ mb: 2 }}
           value={formatDate(trip.trip_end_date)}
           onChange={handleChange}
+          InputProps={{
+            style: { color: '#EEEEEE' },
+          }}
         />
+        <GuestView trip_id={trip_id || ''} />
         <Button type="submit" variant="contained" color="primary">
           Update Trip
         </Button>

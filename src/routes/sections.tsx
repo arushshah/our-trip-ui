@@ -24,7 +24,15 @@ const UpdateTripPage = lazy(() => import('src/pages/update-trip'));
 const ViewTripPage = lazy(() => import('src/pages/view-trip'));
 const AccommodationsPage = lazy(() => import('src/pages/all-accommodations'));
 const CreateAccommodationPage = lazy(() => import('src/pages/create-accommodation'));
-
+const TravelDocsPage = lazy(() => import('src/pages/all-travel-docs'));
+const CreateTravelDocPage = lazy(() => import('src/pages/create-travel-doc'));
+const InvitesPage = lazy(() => import('src/pages/all-invites'));
+const ViewInvitePage = lazy(() => import('src/pages/view-invite'));
+const InvitationRedirectPage = lazy(() => import('src/pages/invitation-redirect'));
+const ViewGuestsPage = lazy(() => import('src/pages/view-guests'));
+const TodoListPage = lazy(() => import('src/pages/todo-list'));
+const ExpensesPage = lazy(() => import('src/pages/expenses'));
+const LocationsPage = lazy(() => import ('src/pages/locations'));
 // ----------------------------------------------------------------------
 
 const renderFallback = (
@@ -63,8 +71,17 @@ export function Router() {
         { path: 'create-trip', element: <CreateTripPage /> },
         { path: 'view-trip/:trip_id', element: <ViewTripPage /> },
         { path: 'update-trip/:trip_id', element: <UpdateTripPage /> },
-        { path: 'accommodations', element: <AccommodationsPage /> },
-        { path: 'create-accommodation', element: <CreateAccommodationPage /> },
+        { path: 'accommodations/:trip_id', element: <AccommodationsPage /> },
+        { path: 'create-accommodation/:trip_id', element: <CreateAccommodationPage /> },
+        { path: 'travel-docs/:trip_id', element: <TravelDocsPage /> },
+        { path: 'create-travel-doc/:trip_id', element: <CreateTravelDocPage /> },
+        { path: '/trip-invites', element: <InvitesPage /> },
+        { path: '/view-invite/:trip_id', element: <ViewInvitePage /> },
+        { path: '/invitation/:token', element: <InvitationRedirectPage /> },
+        { path: '/view-guests/:trip_id', element: <ViewGuestsPage /> },
+        { path: '/todo-list/:trip_id', element: <TodoListPage /> },
+        { path: '/expenses/:trip_id', element: <ExpensesPage /> },
+        { path: '/saved-locations/:trip_id', element: <LocationsPage /> },
       ],
     },
     {

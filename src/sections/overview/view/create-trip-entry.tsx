@@ -37,14 +37,12 @@ export function CreateTripEntry({
   return (
     <Card
       sx={{
-        ...bgGradient({
-          color: `135deg, ${varAlpha(theme.vars.palette[color].lighterChannel, 0.48)}, ${varAlpha(theme.vars.palette[color].lightChannel, 0.48)}`,
-        }),
+        
         p: 3,
         boxShadow: 'none',
         position: 'relative',
-        color: `${color}.darker`,
-        backgroundColor: 'common.white',
+        color: '#222831',
+        backgroundColor: '#EEEEEE',
         ...sx,
       }}
       {...other}

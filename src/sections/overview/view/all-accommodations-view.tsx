@@ -1,96 +1,99 @@
-import React, { useEffect, useState } from 'react';
-import { Link as RouterLink } from 'react-router-dom';
-import { Button, Grid, Typography } from '@mui/material';
-
-import { _tasks, _posts, _timeline } from 'src/_mock';
-import { DashboardContent } from 'src/layouts/dashboard';
-
-import { jwtDecode } from 'jwt-decode';
-import { UserTripEntry } from './user-trip-entry';
+import { useEffect, useState } from 'react';
+import { Link as RouterLink, useParams, useNavigate } from 'react-router-dom';
+import { Box, Grid, Typography } from '@mui/material';
+import axios from 'axios';
+import {apiUrl} from 'src/config';
+import { TripAccommodationEntry } from 'src/sections/accommodations/trip-accommodation-entry';
+import ViewTripViewNavbar from 'src/sections/trip/view/view-trip-view-navbar';
 import { CreateTripEntry } from './create-trip-entry';
 
-interface UserTrip {
-  trip_name: string;
-  trip_start_date: string;
-  trip_end_date: string;
-  trip_id: string;
-  trip_description: string;
-  // Add other properties as needed
-}
-interface DecodedToken {
-  sub: string;
-  // Add other properties as needed
+interface FileObject {
+  file_name: string;
+  s3_url: string;
 }
 
 export function AllAccommodationsView() {
-
-  const [userTrips, setUserTrips] = useState<UserTrip[]>([]);
+  const { trip_id } = useParams<{ trip_id: string }>();
+  const [files, setFiles] = useState<FileObject[]>([]);
 
   useEffect(() => {
-
     const fetchUserTrips = async () => {
       try {
-        const token = localStorage.getItem('access_token');
+        const token = localStorage.getItem('idToken');
         if (!token) {
           throw new Error('No access token found');
         }
-        const decodedToken: DecodedToken = jwtDecode(token);
-        const userId = decodedToken.sub;
         
-        const response = await fetch(`http://127.0.0.1:5000/trips/get-user-trips?user_id=${userId}`);
+        const params = new URLSearchParams({
+          trip_id: trip_id || '',
+          document_category: 'accommodation',
+        });
+        const response = await fetch(`${apiUrl}/user_uploads/retrieve-trip-uploads?${params.toString()}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
         const data = await response.json();
-        
-        const formattedTrips = data.trips.map((trip: UserTrip) => ({
-          ...trip,
-          trip_start_date: new Date(trip.trip_start_date).toLocaleDateString('en-US', {
-            month: 'short',
-            day: 'numeric',
-            year: 'numeric',
-          }),
-          trip_end_date: new Date(trip.trip_end_date).toLocaleDateString('en-US', {
-            month: 'short',
-            day: 'numeric',
-            year: 'numeric',
-          }),
-        }));
-
-        setUserTrips(formattedTrips);
-        
+        if (data.uploads) {
+          setFiles(data.uploads);
+        }
       } catch (error) {
         console.error('Error fetching user trips:', error);
       }
     };
     fetchUserTrips();
-  }, []);
-  
+  }, [trip_id]);
+
+  const handleDelete = async (fileName: string) => {
+    try {
+      await axios.post(`${apiUrl}/user_uploads/delete-upload`,
+        {
+          file_name: fileName,
+          trip_id,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('idToken')}`,
+          },        
+        }
+      );
+      setFiles((prevFiles) => prevFiles.filter((file) => file.file_name !== fileName));
+    } catch (error) {
+      console.error('Error deleting file:', error);
+    }
+  };
+
   return (
-    <DashboardContent maxWidth="xl">
+    <>
+    <ViewTripViewNavbar trip_id={trip_id || ''} />
+    <Box sx={{ p: 3, color: 'white' }}>
       <Typography variant="h4" sx={{ mb: { xs: 3, md: 5 } }}>
         Hi, Welcome back 👋
       </Typography>
-      
-       
+
       <Typography variant="h3" sx={{ mb: 2 }}>
-        Here are your booked accommodations
+        Here are your accommodation documents
       </Typography>
 
       <Grid container spacing={3}>
-        {userTrips.map((trip, index) => (
-          <Grid item xs={12} sm={6} md={6} key={index}>
-            <UserTripEntry trip_id={trip.trip_id} title={trip.trip_name} trip_description={trip.trip_description} trip_start_date={trip.trip_start_date} trip_end_date={trip.trip_end_date}/>
+        {files.map((file, index) => (
+          <Grid item xs={12} sm={6} md={6} key={index} sx={{ display: 'flex' }}>
+            <TripAccommodationEntry trip_id={trip_id || ''} file_name={file.file_name} sx={{ flex: 1, height: '100px' }} onDelete={handleDelete} />
           </Grid>
         ))}
       </Grid>
 
       <br />
       <Grid container spacing={3}>
-      <Grid item xs={12} sm={6} md={6}>
-        <RouterLink to="/create-accommodation" style={{ textDecoration: 'none' }}>
-            <CreateTripEntry title="+ Add an accommodation"/>
-        </RouterLink>
+        <Grid item xs={12} sm={6} md={6}>
+          <RouterLink to={`/create-accommodation/${trip_id}`} style={{ textDecoration: 'none' }}>
+            <CreateTripEntry title="+ Upload new document" sx={{ height: '100px' }} />
+          </RouterLink>
         </Grid>
       </Grid>
-
-    </DashboardContent>
+    </Box>
+    </>
   );
 }
+
+export default AllAccommodationsView;

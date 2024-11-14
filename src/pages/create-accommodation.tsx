@@ -1,4 +1,5 @@
 import { Helmet } from 'react-helmet-async';
+import { useParams } from 'react-router-dom';
 
 import { CONFIG } from 'src/config-global';
 
@@ -7,6 +8,7 @@ import CreateAccommodationView from 'src/sections/accommodations/create-accommod
 // ----------------------------------------------------------------------
 
 export default function Page() {
+  const { trip_id } = useParams<{ trip_id: string }>();
   return (
     <>
       <Helmet>

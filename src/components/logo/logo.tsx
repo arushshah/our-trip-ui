@@ -3,7 +3,6 @@ import type { BoxProps } from '@mui/material/Box';
 import { useId, forwardRef } from 'react';
 
 import Box from '@mui/material/Box';
-import { useTheme } from '@mui/material/styles';
 
 import { RouterLink } from 'src/routes/components';
 
@@ -27,9 +26,9 @@ export const Logo = forwardRef<HTMLDivElement, LogoProps>(
       <Box
         alt="Single logo"
         component="img"
-        src="src/components/logo/logo-single.svg"
-        width="100%"
-        height="100%"
+        src='/assets/icons/logo-single.svg'
+        width={width ?? '80px'} // Increased size
+        height={height ?? '80px'} // Increased size
       />
     );
 
@@ -37,40 +36,40 @@ export const Logo = forwardRef<HTMLDivElement, LogoProps>(
       <Box
         alt="Full logo"
         component="img"
-        src="src/components/logo/logo-full.svg"
-        width="100%"
-        height="100%"
+        src='/assets/icons/logo-full.svg'
+        width={width ?? '120px'} // Increased size
+        height={height ?? '40px'} // Increased size
       />
     );
 
     const baseSize = {
-      width: width ?? 40,
-      height: height ?? 40,
+      width: width ?? 80,
+      height: height ?? 80,
       ...(!isSingle && {
-        width: width ?? 102,
-        height: height ?? 36,
+        width: width ?? 120,
+        height: height ?? 40,
       }),
     };
 
     return (
-      <Box
-        ref={ref}
-        component={RouterLink}
-        href={href}
-        className={logoClasses.root.concat(className ? ` ${className}` : '')}
-        aria-label="Logo"
-        sx={{
-          ...baseSize,
-          flexShrink: 0,
-          display: 'inline-flex',
-          verticalAlign: 'middle',
-          ...(disableLink && { pointerEvents: 'none' }),
-          ...sx,
-        }}
-        {...other}
-      >
-        {isSingle ? singleLogo : fullLogo}
-      </Box>
+      <RouterLink href={href} style={{ textDecoration: 'none' }}>
+        <Box
+          ref={ref}
+          className={logoClasses.root.concat(className ? ` ${className}` : '')}
+          aria-label="Logo"
+          sx={{
+            ...baseSize,
+            flexShrink: 0,
+            display: 'inline-flex',
+            verticalAlign: 'middle',
+            ...(disableLink && { pointerEvents: 'none' }),
+            ...sx,
+          }}
+          {...other}
+        >
+          {isSingle ? singleLogo : fullLogo}
+        </Box>
+      </RouterLink>
     );
   }
 );

@@ -11,12 +11,14 @@ import MenuList from '@mui/material/MenuList';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 import MenuItem, { menuItemClasses } from '@mui/material/MenuItem';
+import { auth } from 'src/firebaseConfig';
 
 import { useRouter, usePathname } from 'src/routes/hooks';
 
 import { _myAccount } from 'src/_mock';
 
 import { useAuth } from 'src/context/AuthContext';
+import { signOut as firebaseSignOut } from 'firebase/auth';
 
 interface Option {
   label: string;
@@ -41,8 +43,14 @@ export function AccountPopover({ data = [], sx, ...other }: AccountPopoverProps)
 
   const [openPopover, setOpenPopover] = useState<HTMLButtonElement | null>(null);
 
-  const handleSignOut = () => {
-    signOut();
+  const handleSignOut = async () => {
+    try {
+      await firebaseSignOut(auth);
+      signOut(); // Call the signOut function from AuthContext to update the state
+      router.push('/sign-in'); // Redirect to the sign-in page
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
   };
 
   const handleOpenPopover = useCallback((event: React.MouseEvent<HTMLButtonElement>) => {
@@ -94,12 +102,9 @@ export function AccountPopover({ data = [], sx, ...other }: AccountPopoverProps)
       >
         <Box sx={{ p: 2, pb: 1.5 }}>
           <Typography variant="subtitle2" noWrap>
-            {_myAccount?.displayName}
+            {localStorage.getItem('first_name')} {localStorage.getItem('last_name')}
           </Typography>
 
-          <Typography variant="body2" sx={{ color: 'text.secondary' }} noWrap>
-            {_myAccount?.email}
-          </Typography>
         </Box>
 
         <Divider sx={{ borderStyle: 'dashed' }} />
