@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Box, Typography, TextField, Button } from '@mui/material';
+import { Box, Typography, TextField } from '@mui/material';
 import { useParams } from 'react-router-dom';
 import { mapsKey } from 'src/config';
 
@@ -9,20 +9,18 @@ export default function LocationsView() {
   const mapRef = useRef<HTMLDivElement | null>(null);
   const [map, setMap] = useState<google.maps.Map | null>(null);
   const [autocomplete, setAutocomplete] = useState<google.maps.places.Autocomplete | null>(null);
-  // Dynamically load the Google Maps script
+  const markersRef = useRef<google.maps.Marker[]>([]);
+
   useEffect(() => {
     const loadScript = () => {
-      // Check if the script is already loaded
-      if (document.querySelector(`script[src="https://maps.googleapis.com/maps/api/js?key=${mapsKey}}&libraries=places"]`)) {
-        return; // If already loaded, skip appending
+      if (!document.querySelector(`script[src="https://maps.googleapis.com/maps/api/js?key=${mapsKey}&libraries=places"]`)) {
+        const script = document.createElement('script');
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${mapsKey}&libraries=places`;
+        script.async = true;
+        script.defer = true;
+        script.onload = initializeMap;
+        document.head.appendChild(script);
       }
-
-      const script = document.createElement('script');
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${mapsKey}&libraries=places`;
-      script.async = true;
-      script.defer = true;
-      script.onload = () => initializeMap();
-      document.head.appendChild(script);
     };
 
     const initializeMap = () => {
@@ -36,10 +34,31 @@ export default function LocationsView() {
         const autoComplete = new google.maps.places.Autocomplete(input);
         autoComplete.setFields(['place_id', 'geometry', 'name']);
         
-        // Set the autocomplete instance
         setAutocomplete(autoComplete);
+        setMap(googleMap);
 
-        // Map click listener to save locations
+        autoComplete.addListener('place_changed', () => {
+          const place = autoComplete.getPlace();
+          if (place.geometry && place.geometry.location) {
+            const location = place.geometry.location;
+            googleMap.setCenter(location);
+            googleMap.setZoom(15);
+
+            const newPlace = {
+              name: place.name || 'Unnamed Location',
+              lat: location.lat(),
+              lng: location.lng(),
+            };
+            setPlaces((prev) => [...prev, newPlace]);
+
+            const marker = new google.maps.Marker({
+              position: location,
+              map: googleMap,
+            });
+            markersRef.current.push(marker);
+          }
+        });
+
         googleMap.addListener('click', (e: google.maps.MapMouseEvent) => {
           const latLng = e.latLng;
           if (latLng) {
@@ -49,40 +68,37 @@ export default function LocationsView() {
               lng: latLng.lng(),
             };
             setPlaces((prev) => [...prev, newPlace]);
+
+            const marker = new google.maps.Marker({
+              position: latLng,
+              map: googleMap,
+            });
+            markersRef.current.push(marker);
           }
         });
-
-        // Set the map reference
-        setMap(googleMap);
       }
     };
 
-    loadScript(); // Dynamically load the Google Maps script
+    loadScript();
 
     return () => {
-      // Cleanup the script when the component unmounts
       const scripts = document.querySelectorAll(`script[src^="https://maps.googleapis.com"]`);
       scripts.forEach((script) => script.remove());
     };
   }, []);
 
-  // Handle place search selection
-  const handlePlaceSelect = () => {
-    if (autocomplete && map) {
-      const place = autocomplete.getPlace();
-      if (place.geometry && place.geometry.location) {
-        const { lat, lng } = place.geometry.location;
-        const newPlace = {
-          name: place.name || 'Unnamed Location',
-          lat: lat(),
-          lng: lng(),
-        };
-        setPlaces((prev) => [...prev, newPlace]);
+  // Handle clicking on a saved location to center it on the map
+  const handleLocationClick = (place: { lat: number, lng: number }) => {
+    if (map) {
+      const latLng = new google.maps.LatLng(place.lat, place.lng);
+      map.setCenter(latLng);
+      map.setZoom(15);
 
-        // Optionally, move the map to the selected location
-        map.setCenter(new google.maps.LatLng(lat(), lng()));
-        map.setZoom(15);
-      }
+      const marker = new google.maps.Marker({
+        position: latLng,
+        map,
+      });
+      markersRef.current.push(marker);
     }
   };
 
@@ -107,19 +123,7 @@ export default function LocationsView() {
           fullWidth
           variant="outlined"
           sx={{ mb: 2 }}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') {
-              handlePlaceSelect();
-            }
-          }}
         />
-        <Button
-          variant="contained"
-          sx={{ mb: 3 }}
-          onClick={handlePlaceSelect}
-        >
-          Add Selected Place
-        </Button>
 
         {/* Google Map */}
         <div
@@ -131,10 +135,27 @@ export default function LocationsView() {
           Saved Locations:
         </Typography>
         <ul>
-          {places.map((place, index) => (
-            <li key={index}>{place.name}</li>
-          ))}
+            {places.map((place, index) => (
+                <li key={index} style={{ listStyle: 'none', marginBottom: '8px' }}>
+                <button
+                    type="button"  // Add this type attribute
+                    onClick={() => handleLocationClick(place)}
+                    style={{
+                    background: 'none',
+                    border: 'none',
+                    color: '#EEEEEE',
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                    fontSize: 'inherit',
+                    padding: 0,
+                    }}
+                >
+                    {place.name}
+                </button>
+                </li>
+            ))}
         </ul>
+
       </Box>
     </>
   );
