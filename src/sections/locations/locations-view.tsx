@@ -107,6 +107,11 @@ export default function LocationsView() {
           fullWidth
           variant="outlined"
           sx={{ mb: 2 }}
+          InputProps={{
+            style: {
+              color: '#EEEEEE', // Set the text color to white
+            },
+          }}
           onKeyDown={(e) => {
             if (e.key === 'Enter') {
               handlePlaceSelect();
