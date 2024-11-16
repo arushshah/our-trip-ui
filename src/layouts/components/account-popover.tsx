@@ -1,7 +1,5 @@
 import type { IconButtonProps } from '@mui/material/IconButton';
-
 import React, { useState, useCallback } from 'react';
-
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Avatar from '@mui/material/Avatar';
@@ -12,19 +10,10 @@ import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 import MenuItem, { menuItemClasses } from '@mui/material/MenuItem';
 import { auth } from 'src/firebaseConfig';
-
 import { useRouter, usePathname } from 'src/routes/hooks';
-
 import { _myAccount } from 'src/_mock';
-
 import { useAuth } from 'src/context/AuthContext';
 import { signOut as firebaseSignOut } from 'firebase/auth';
-
-interface Option {
-  label: string;
-  href: string;
-  icon: React.ReactNode;
-}
 
 export type AccountPopoverProps = IconButtonProps & {
   data?: {
