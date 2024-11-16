@@ -72,7 +72,6 @@ export default function GuestView({ trip_id, show_invited_guests }: GuestViewPro
           <TableRow>
             <TableCell sx={{ color: 'white', backgroundColor: '#222831' }}>First Name</TableCell>
             <TableCell sx={{ color: 'white', backgroundColor: '#222831' }}>Last Name</TableCell>
-            <TableCell sx={{ color: 'white', backgroundColor: '#222831' }}>Username</TableCell>
             <TableCell sx={{ color: 'white', backgroundColor: '#222831' }}>RSVP Status</TableCell>
             <TableCell sx={{ color: 'white', backgroundColor: '#222831' }}>Host</TableCell>
             <TableCell sx={{ color: 'white', backgroundColor: '#222831' }}>Actions</TableCell>
@@ -84,7 +83,6 @@ export default function GuestView({ trip_id, show_invited_guests }: GuestViewPro
               <TableRow key={guest.guest_username}>
                 <TableCell sx={{ color: 'white' }}>{guest.guest_first_name}</TableCell>
                 <TableCell sx={{ color: 'white' }}>{guest.guest_last_name}</TableCell>
-                <TableCell sx={{ color: 'white' }}>{guest.guest_username}</TableCell>
                 <TableCell sx={{ color: 'white' }}>{guest.rsvp_status}</TableCell>
                 <TableCell sx={{ color: 'white' }}>{guest.is_host ? 'Yes' : 'No'}</TableCell>
                 <TableCell>
