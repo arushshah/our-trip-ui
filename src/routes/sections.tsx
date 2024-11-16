@@ -9,6 +9,7 @@ import { AuthLayout } from 'src/layouts/auth';
 import { DashboardLayout } from 'src/layouts/dashboard';
 import ProtectedRoute from 'src/routes/components/ProtectedRoute'; // Import the ProtectedRoute component
 import { AuthProvider } from 'src/context/AuthContext'; // Import the AuthProvider
+import { ViewItinerary } from '../sections/itinerary/view-itinerary';
 
 // ----------------------------------------------------------------------
 
@@ -33,6 +34,7 @@ const ViewGuestsPage = lazy(() => import('src/pages/view-guests'));
 const TodoListPage = lazy(() => import('src/pages/todo-list'));
 const ExpensesPage = lazy(() => import('src/pages/expenses'));
 const LocationsPage = lazy(() => import ('src/pages/locations'));
+const ItineraryPage = lazy(() => import('src/pages/itinerary'));
 // ----------------------------------------------------------------------
 
 const renderFallback = (
@@ -83,6 +85,7 @@ export function Router() {
         { path: '/todo-list/:trip_id', element: <TodoListPage /> },
         { path: '/expenses/:trip_id', element: <ExpensesPage /> },
         { path: '/saved-locations/:trip_id', element: <LocationsPage /> },
+        { path: '/itinerary/:trip_id', element: <ItineraryPage /> },
       ],
     },
     {

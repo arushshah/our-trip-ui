@@ -56,12 +56,11 @@ export function AllTravelDocsView() {
         });
       setFiles((prevFiles) => prevFiles.filter((file) => file.file_name !== fileName));
     } catch (error) {
-      console.error('Error deleting file:', error);
+        console.error('Error deleting file:', error);
     }
   };
 
   return (
-    <>
     <Box sx={{ p: 3, color: 'white' }}>
 
       <Typography variant="h2" sx={{ mb: 2 }}>
@@ -99,7 +98,6 @@ export function AllTravelDocsView() {
         </Grid>
       </Grid>
     </Box>
-    </>
   );
 }
 

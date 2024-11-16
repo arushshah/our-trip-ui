@@ -66,7 +66,7 @@ export const getNavDataTrip = (tripId: string | null) => [
   },
   {
     title: 'Itinerary',
-    path: '/',
+    path: tripId ? `/itinerary/${tripId}` : '/',
     icon: <AutoStoriesIcon />
   },
   {

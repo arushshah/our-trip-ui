@@ -5,6 +5,22 @@ import BackButtonView from 'src/layouts/components/back-button';
 import { useParams } from 'react-router-dom';
 import {apiUrl} from 'src/config';
 
+const ALLOWED_FILE_TYPES = [
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/vnd.ms-excel',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'text/plain',
+  'application/pdf',
+  'text/csv',
+  'image/jpeg',
+  'image/png',
+  'image/tiff',
+  'application/vnd.ms-powerpoint',
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+];
+
+
 const CreateTravelDocView: React.FC = () => {
   const { trip_id } = useParams<{ trip_id: string }>();
   const [file, setFile] = useState<File | null>(null);
@@ -14,8 +30,17 @@ const CreateTravelDocView: React.FC = () => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (event.target.files && event.target.files[0]) {
-      setFile(event.target.files[0]);
+    const newFile = event.target.files?.[0];
+    if (newFile) {
+      if (!ALLOWED_FILE_TYPES.includes(newFile.type)) {
+        setErrorMessage('Invalid file type. Please upload a valid document.');
+        return;
+      }
+      if (newFile.size > 5 * 1024 * 1024) {
+        setErrorMessage('File size exceeds 5MB. Please upload a smaller file.');
+        return;
+      }
+      setFile(newFile);
     }
   };
 
@@ -91,6 +116,9 @@ const CreateTravelDocView: React.FC = () => {
           }}
           InputProps={{
             style: { color: '#EEEEEE' },
+            inputProps: {
+              accept: '.doc,.docx,.xls,.xlsx,.txt,.pdf,.jpg,.jpeg,.png,.tiff,.ppt,.pptx',
+            },
           }}
         />
         <Button type="submit" variant="contained" color="primary" disabled={uploading}>
