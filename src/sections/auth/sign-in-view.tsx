@@ -106,7 +106,7 @@ export function SignInView() {
         user.getIdToken().then((token) => {
           idTokenRef.current = token;
           localStorage.setItem('idToken', token);
-          navigate('/');
+          navigate('/home');
         });
       }
     });

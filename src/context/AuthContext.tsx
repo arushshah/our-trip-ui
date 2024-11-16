@@ -32,18 +32,13 @@ export function AuthProvider({children}: AuthProviderProps) {
       if (localStorage.getItem("userSetupStarted") === "true") {
         return
       }
-      console.log("HERE I WAS CALLED");
-      console.log("AUTH: ", auth)
-      console.log("AUTH USER: ", auth_user)
       if (auth_user) {
         try {
           const token = await auth_user.getIdToken();
           const currentTime = Date.now()/1000;
           const decodedToken: any = jwtDecode(token);
-          console.log("CURRENT TIME: ", currentTime+3580);
-          console.log("EXP TIME: ", decodedToken.exp);
 
-          if (decodedToken.exp < currentTime+3580) {
+          if (decodedToken.exp < currentTime) {
             console.log("SIGNING OUT LINE 43");
             signOut();
             navigate('/sign-in')
@@ -66,13 +61,11 @@ export function AuthProvider({children}: AuthProviderProps) {
             localStorage.setItem("last_name", data.lastName);
           } else {
             console.error('User entry does not exist in the database.');
-            console.log("SIGNING OUT LINE 65");
             signOut();
           }
         }
         catch (error) {
           console.error('Error validating user:', error);
-          console.log("SIGNING OUT LINE 71");
           signOut();
         }
       } else {

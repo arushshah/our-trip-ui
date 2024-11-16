@@ -131,7 +131,7 @@ export function CreateAccountView() {
       if (createUserResponse.status === 201) {
         console.log("Created user in DB");
         localStorage.removeItem('userSetupStarted');
-        navigate('/');
+        navigate('/home');
       }
       else {
         setErrorMessage('Failed to create user in the database.');

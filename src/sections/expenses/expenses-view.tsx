@@ -6,7 +6,6 @@ import {
 import DeleteIcon from '@mui/icons-material/Delete';
 import {apiUrl} from 'src/config';
 import { useParams } from 'react-router-dom';
-import ViewTripViewNavbar from 'src/sections/trip/view/view-trip-view-navbar';
 import { getAuth } from 'firebase/auth';
 
 interface ExpenseItem {
@@ -189,7 +188,6 @@ export function ExpensesView() {
 
   return (
     <>
-      <ViewTripViewNavbar trip_id={trip_id || ''} />
       <Box sx={{ padding: 3, backgroundColor: '#222831', color: '#EEEEEE', minHeight: '100vh' }}>
         <Typography variant="h3" sx={{ mb: 2 }}>Trip Expenses</Typography>
         <List>

@@ -1,10 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link as RouterLink, useParams, useNavigate } from 'react-router-dom';
 import { Box, Button, Grid, Typography } from '@mui/material';
 import axios from 'axios';
 import { _tasks, _posts, _timeline } from 'src/_mock';
-
-import ViewTripViewNavbar from 'src/sections/trip/view/view-trip-view-navbar';
 import { apiUrl } from 'src/config';
 import { TripTravelEntry } from 'src/sections/travel/trip-travel-entry';
 
@@ -64,7 +62,6 @@ export function AllTravelDocsView() {
 
   return (
     <>
-    <ViewTripViewNavbar trip_id={trip_id || ''} />
     <Box sx={{ p: 3, color: 'white' }}>
 
       <Typography variant="h2" sx={{ mb: 2 }}>

@@ -42,7 +42,7 @@ export function CreateTripView() {
 
       if (response.ok) {
         // Redirect to the home page with a success message
-        navigate('/', { state: { message: 'Trip Successfully Created' } });
+        navigate('/home', { state: { message: 'Trip Successfully Created' } });
       } else {
         console.error('Failed to create trip');
       }

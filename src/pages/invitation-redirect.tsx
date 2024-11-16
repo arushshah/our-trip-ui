@@ -29,7 +29,7 @@ const InvitationRedirect: React.FC = () => {
           navigate(`/view-invite/${data.trip_id}`);
         } else {
           console.error('Failed to accept invite');
-          navigate('/')
+          navigate('/home')
         }
       } catch (error) {
         console.error('Error accepting invite:', error);

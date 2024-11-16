@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react';
-import { Outlet, useRoutes } from 'react-router-dom';
+import { Navigate, Outlet, useRoutes } from 'react-router-dom';
 
 import Box from '@mui/material/Box';
 import LinearProgress, { linearProgressClasses } from '@mui/material/LinearProgress';
@@ -64,7 +64,8 @@ export function Router() {
       ),
       // Add routes here
       children: [
-        { element: <HomePage />, index: true },
+        { path: '/', element: <Navigate to="/home" replace /> }, // Added redirection from '/' to '/home'
+        { path: 'home', element: <HomePage /> },
         { path: 'user', element: <UserPage /> },
         { path: 'products', element: <ProductsPage /> },
         { path: 'blog', element: <BlogPage /> },

@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Box, Typography, Checkbox, List, ListItem, ListItemText, ListItemIcon, TextField, Button, IconButton } from '@mui/material';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
-import ViewTripViewNavbar from 'src/sections/trip/view/view-trip-view-navbar';
 import { useParams } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -170,7 +169,6 @@ export function TodoListView() {
   }
   return (
     <>
-      <ViewTripViewNavbar trip_id={trip_id || ''} />
       <Box
         sx={{
           minHeight: '100vh',
