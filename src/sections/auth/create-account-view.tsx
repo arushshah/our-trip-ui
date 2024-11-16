@@ -1,10 +1,10 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import Box from '@mui/material/Box';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
-import { useRouter } from 'src/routes/hooks';
 import { Button } from '@mui/material';
 import { auth, RecaptchaVerifier } from 'src/firebaseConfig';
+import { useAuth } from 'src/context/AuthContext';
 import { signInWithPhoneNumber, ConfirmationResult } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
 import {apiUrl} from 'src/config';
@@ -21,20 +21,18 @@ export function CreateAccountView() {
   const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
 
   const validatePhoneNumber = (number: string) => {
-    const phoneNumberPattern = /^(\+1\s?)?\d{10}$/;
+    const phoneNumberPattern = /^\+?[1-9]\d{1,14}$/;
     return phoneNumberPattern.test(number);
   };
   
-  const formatPhoneNumber = (number: string) => `+1${number}`;
+  const formatPhoneNumber = (number: string) => {
+    const cleanedNumber = number.replace(/[^\d]/g, ''); // Remove non-digits
+    return `+1${cleanedNumber}`; // Assuming US numbers
+  };
 
   const handlePhoneNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setPhoneNumber(value);
-    if (!validatePhoneNumber(value)) {
-      setErrorMessage('Phone number must be 10 digits long (excluding the international area code).');
-    } else {
-      setErrorMessage('');
-    }
   };
 
   useEffect(() => {
@@ -61,6 +59,7 @@ export function CreateAccountView() {
       setErrorMessage('Invalid phone number');
       return;
     }
+    setErrorMessage('');
     const formattedPhoneNumber = formatPhoneNumber(phoneNumber);
 
     const response = await fetch(`${apiUrl}/users/validate-user`, {
@@ -87,6 +86,9 @@ export function CreateAccountView() {
     }
 
     try {
+      console.log("AUTH: ", auth)
+      console.log("PHONE NUMBER: ", formattedPhoneNumber)
+      console.log("VERIFIER: ", appVerifier)
       const confirmation = await signInWithPhoneNumber(auth, formattedPhoneNumber, appVerifier);
       setConfirmationResult(confirmation);
       setOtpSent(true);
@@ -106,7 +108,7 @@ export function CreateAccountView() {
       setErrorMessage('No OTP sent');
       return;
     }
-
+    localStorage.setItem('userSetupStarted', 'true');
     setLoading(true);
 
     try {
@@ -125,16 +127,23 @@ export function CreateAccountView() {
         },
         body: JSON.stringify({ phoneNumber: user.phoneNumber, firstName, lastName }),
       });
-      const createUserData = await createUserResponse.json();
-      if (createUserData.message !== 'User created successfully') {
-        setErrorMessage('Failed to create user in the database.');
-        return;
+      console.log("CREATED USER: ", createUserResponse);
+      if (createUserResponse.status === 201) {
+        console.log("Created user in DB");
+        localStorage.removeItem('userSetupStarted');
+        navigate('/');
       }
-      navigate('/');
+      else {
+        setErrorMessage('Failed to create user in the database.');
+      }
     } catch (error) {
       setLoading(false);
       setErrorMessage('Invalid OTP. Please try again.');
       console.error('Error verifying OTP:', error);
+    }
+    finally {
+      setLoading(false);
+      localStorage.removeItem('userSetupStarted');
     }
   };
 

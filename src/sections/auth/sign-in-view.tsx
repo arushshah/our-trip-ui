@@ -33,7 +33,6 @@ export function SignInView() {
   const handlePhoneNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setPhoneNumber(value);
-    setErrorMessage(validatePhoneNumber(value) ? '' : 'Phone number must be 10 digits long (excluding the international area code).');
     if (otpSent) {
       setOtpSent(false);
       setConfirmationResult(null);
@@ -68,6 +67,7 @@ export function SignInView() {
       setErrorMessage('Invalid phone number');
       return;
     }
+    setErrorMessage('');
     const formattedPhoneNumber = formatPhoneNumber(phoneNumber);
 
     const response = await fetch(`${apiUrl}/users/validate-user`, {
