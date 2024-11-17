@@ -3,6 +3,10 @@ import axios from 'axios';
 import { Box, Button, Card, CardActions, CardContent, CardMedia, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, Palette, PaletteColor, Typography } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import {apiUrl} from 'src/config';
+import mammoth from 'mammoth';
+import * as XLSX from 'xlsx';
+import WordViewer from './WordViewer';
+import ExcelViewer from './ExcelViewer';
 
 interface TripTravelEntryProps {
   trip_id: string;
@@ -27,45 +31,71 @@ export function TripTravelEntry({
   const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false);
   const [lastModified, setLastModified] = useState<string | null>(null);
   const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
-
+  const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchPresignedUrls = async () => {
 
         try {
-            const downloadResponse = await axios.post(`${apiUrl}/user_uploads/generate-presigned-url`, 
-                {
-                    file_name,
-                    trip_id,
-                    url_type: "download",
-                    document_category: "travel"
-                },
-                {
-                    headers: {
-                        Authorization: `Bearer ${localStorage.getItem('idToken')}`,
-                    }
-                }, 
-            );
+          const downloadResponse = await axios.post(`${apiUrl}/user_uploads/generate-presigned-url`, 
+              {
+                  file_name,
+                  trip_id,
+                  url_type: "download",
+                  document_category: "travel"
+              },
+              {
+                  headers: {
+                      Authorization: `Bearer ${localStorage.getItem('idToken')}`,
+                  }
+              }, 
+          );
 
-            const downloadUrl = downloadResponse.data.download_url;
-
-            // Fetch the file from S3 using the presigned URL
-            const fileResponse = await axios.get(downloadUrl, {
-                responseType: 'blob', // Important to get the file as a blob
+          const downloadUrl = downloadResponse.data.download_url;
+          setFileUrl(downloadUrl)
+          if (file_name.endsWith('.docx')) {
+            // Generate a thumbnail for DOCX files (a small preview or first 200 characters)
+            const response = await axios.get(downloadUrl, {
+              responseType: 'arraybuffer',
             });
-            // get the upload date
-            setLastModified(fileResponse.headers['last-modified']);
-            setFileUrl(downloadUrl)
+            const arrayBuffer = response.data;
+            const result = await mammoth.convertToHtml({ arrayBuffer });
 
-      } catch (error) {
-        console.error('Error fetching presigned URLs or downloading file:', error);
-      }
+            // Here we just take the first 200 characters for preview
+            const previewText = result.value.slice(0, 200);
+            const previewImage = `data:image/svg+xml;charset=utf-8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><text x="10" y="20" font-size="12" fill="black">${encodeURIComponent(previewText)}</text></svg>`;
+            // Set the preview thumbnail (SVG image containing text)
+            setThumbnailUrl(previewImage);
+          } else if (file_name.endsWith('.xlsx') || file_name.endsWith('.xls')) {
+            // Generate a thumbnail for Excel files
+            const response = await axios.get(downloadUrl, {
+              responseType: 'arraybuffer',
+            });
+            const arrayBuffer = response.data;
+            const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+            const sheetNames = workbook.SheetNames;
+            const sheet = workbook.Sheets[sheetNames[0]];
+            const htmlString = XLSX.utils.sheet_to_html(sheet);
+            
+            // Use a slice of the Excel sheet for the thumbnail preview
+            setThumbnailUrl(htmlString.slice(0, 200)); 
+          }
+          // Fetch the file from S3 using the presigned URL
+          const fileResponse = await axios.get(downloadUrl, {
+              responseType: 'blob', // Important to get the file as a blob
+          });
+          // get the upload date
+          setLastModified(fileResponse.headers['last-modified']);
+        } catch (error) {
+            console.error('Error fetching presigned URLs or downloading file:', error);
+        }
     };
 
     fetchPresignedUrls();
-  }, [file_name, trip_id, fileUrl]);
+  }, [file_name, trip_id]);
 
   const handleClick = () => {
+    console.log(fileUrl);
     setIsDialogOpen(true);
   };
 
@@ -92,9 +122,11 @@ export function TripTravelEntry({
     <Card sx={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }} onClick={handleClick}>
       <Box sx={{ position: 'relative', paddingBottom: '50%', width: '100%' }}>
         <CardMedia
+            // TODO: thumbnailUrl is not working properly, preview image isnt being displayed
             component="img"
             sx={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'contain' }}
-            image={fileUrl || undefined}
+            image={thumbnailUrl || fileUrl || ''}
+            alt={file_name}
         />
       </Box>
       <CardContent sx={{ flex: '1 0 auto', textAlign: 'center', overflow: 'hidden' }}>
@@ -145,7 +177,15 @@ export function TripTravelEntry({
           height: '80vh',
         }}
       >
-        {fileUrl && (
+        {fileUrl && file_name.endsWith('.pdf') && (
+            <iframe
+              src={fileUrl}
+              width="100%"
+              height="600"
+              title="Document Preview"
+            />
+          )}
+        {fileUrl && (file_name.endsWith('.jpg') || file_name.endsWith('.png') || file_name.endsWith('.jpeg')) && (
           <img
             src={fileUrl}
             alt={file_name}
@@ -154,6 +194,12 @@ export function TripTravelEntry({
               maxHeight: '100%',
             }}
           />
+        )}
+        {fileUrl && file_name.endsWith('.docx') && (
+          <WordViewer fileUrl={fileUrl} />
+        )}
+        {fileUrl && (file_name.endsWith('.xlsx') || file_name.endsWith('.xls')) && (
+          <ExcelViewer fileUrl={fileUrl} />
         )}
       </DialogContent>
     </Dialog>

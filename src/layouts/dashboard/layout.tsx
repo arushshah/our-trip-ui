@@ -1,6 +1,6 @@
 import type { Theme, SxProps, Breakpoint } from '@mui/material/styles';
-
-import { useState } from 'react';
+import { useLocation, useParams } from 'react-router-dom';
+import { useEffect, useState } from 'react';
 
 import Box from '@mui/material/Box';
 import Alert from '@mui/material/Alert';
@@ -13,7 +13,7 @@ import { Iconify } from 'src/components/iconify';
 import { Main } from './main';
 import { layoutClasses } from '../classes';
 import { NavMobile, NavDesktop } from './nav';
-import { navData } from '../config-nav-dashboard';
+import { navDataHomepage, getNavDataTrip } from '../config-nav-dashboard';
 import { _workspaces } from '../config-nav-workspace';
 import { MenuButton } from '../components/menu-button';
 import { LayoutSection } from '../core/layout-section';
@@ -38,6 +38,18 @@ export function DashboardLayout({ sx, children, header }: DashboardLayoutProps) 
   const [navOpen, setNavOpen] = useState(false);
 
   const layoutQuery: Breakpoint = 'lg';
+  const location = useLocation();
+  const [navData, setNavData] = useState(navDataHomepage);
+  const { trip_id } = useParams<{ trip_id: string }>();
+
+
+  useEffect(() => {
+    if (location.pathname.includes('/home')) {
+      setNavData(navDataHomepage);
+    } else if (trip_id) {
+      setNavData(getNavDataTrip(trip_id));
+    }
+  }, [location.pathname, trip_id]);
 
   return (
     <LayoutSection
@@ -84,7 +96,7 @@ export function DashboardLayout({ sx, children, header }: DashboardLayoutProps) 
                   data={[
                     {
                       label: 'Home',
-                      href: '/',
+                      href: '/home',
                       icon: <Iconify width={22} icon="solar:home-angle-bold-duotone" />,
                     },
                     {

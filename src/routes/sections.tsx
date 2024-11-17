@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react';
-import { Outlet, useRoutes } from 'react-router-dom';
+import { Navigate, Outlet, useRoutes } from 'react-router-dom';
 
 import Box from '@mui/material/Box';
 import LinearProgress, { linearProgressClasses } from '@mui/material/LinearProgress';
@@ -9,6 +9,7 @@ import { AuthLayout } from 'src/layouts/auth';
 import { DashboardLayout } from 'src/layouts/dashboard';
 import ProtectedRoute from 'src/routes/components/ProtectedRoute'; // Import the ProtectedRoute component
 import { AuthProvider } from 'src/context/AuthContext'; // Import the AuthProvider
+import { ViewItinerary } from '../sections/itinerary/view-itinerary';
 
 // ----------------------------------------------------------------------
 
@@ -33,6 +34,7 @@ const ViewGuestsPage = lazy(() => import('src/pages/view-guests'));
 const TodoListPage = lazy(() => import('src/pages/todo-list'));
 const ExpensesPage = lazy(() => import('src/pages/expenses'));
 const LocationsPage = lazy(() => import ('src/pages/locations'));
+const ItineraryPage = lazy(() => import('src/pages/itinerary'));
 // ----------------------------------------------------------------------
 
 const renderFallback = (
@@ -64,7 +66,8 @@ export function Router() {
       ),
       // Add routes here
       children: [
-        { element: <HomePage />, index: true },
+        { path: '/', element: <Navigate to="/home" replace /> }, // Added redirection from '/' to '/home'
+        { path: 'home', element: <HomePage /> },
         { path: 'user', element: <UserPage /> },
         { path: 'products', element: <ProductsPage /> },
         { path: 'blog', element: <BlogPage /> },
@@ -82,6 +85,7 @@ export function Router() {
         { path: '/todo-list/:trip_id', element: <TodoListPage /> },
         { path: '/expenses/:trip_id', element: <ExpensesPage /> },
         { path: '/saved-locations/:trip_id', element: <LocationsPage /> },
+        { path: '/itinerary/:trip_id', element: <ItineraryPage /> },
       ],
     },
     {

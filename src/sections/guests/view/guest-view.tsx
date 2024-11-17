@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import axios from 'axios';
 import { Box, Typography, Table, TableHead, TableBody, TableRow, TableCell, IconButton, TextField, Button, CircularProgress } from '@mui/material';
-import ViewTripViewNavbar from 'src/sections/trip/view/view-trip-view-navbar';
 import {apiUrl} from 'src/config';
 
 interface Guest {
@@ -64,7 +63,6 @@ export default function GuestView({ trip_id, show_invited_guests }: GuestViewPro
 
   return (
     <>
-    <ViewTripViewNavbar trip_id={trip_id || ''} />
     <Box sx={{ p: 3, color: 'white' }}>
       <Typography variant="h4" sx={{ mb: 3, color: 'white' }}>Trip Guests</Typography>
       <Table>

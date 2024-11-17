@@ -1,9 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import {apiUrl} from 'src/config';
 import { Box, Typography, TextField, Button, FormControl, InputLabel, Select, MenuItem, SelectChangeEvent, InputAdornment } from '@mui/material';
-import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
-import ViewTripViewNavbar from './view-trip-view-navbar';
 
 
 interface Trip {
@@ -128,7 +127,7 @@ export function ViewTripView() {
         }
       });
       // Redirect to another page or update the UI after successful deletion
-      navigate('/'); // Redirect to trips list page
+      navigate('/home'); // Redirect to trips list page
     } catch (error) {
       console.error('Error deleting trip:', error);
     }
@@ -140,7 +139,6 @@ export function ViewTripView() {
 
   return (
     <>
-    <ViewTripViewNavbar trip_id={trip_id} />
     <Box sx={{ p: 3, color: 'white', position: 'relative'}}>
         <Button
           variant="contained"

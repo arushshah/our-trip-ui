@@ -4,7 +4,6 @@ import { Box, Grid, Typography } from '@mui/material';
 import axios from 'axios';
 import {apiUrl} from 'src/config';
 import { TripAccommodationEntry } from 'src/sections/accommodations/trip-accommodation-entry';
-import ViewTripViewNavbar from 'src/sections/trip/view/view-trip-view-navbar';
 import { CreateTripEntry } from './create-trip-entry';
 
 interface FileObject {
@@ -65,7 +64,6 @@ export function AllAccommodationsView() {
 
   return (
     <>
-    <ViewTripViewNavbar trip_id={trip_id || ''} />
     <Box sx={{ p: 3, color: 'white' }}>
       <Typography variant="h4" sx={{ mb: { xs: 3, md: 5 } }}>
         Hi, Welcome back 👋
