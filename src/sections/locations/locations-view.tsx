@@ -4,7 +4,6 @@ import { useParams } from 'react-router-dom';
 import { apiUrl, mapsKey } from 'src/config';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { v4 as uuidv4 } from 'uuid';
-import ViewTripViewNavbar from '../trip/view/view-trip-view-navbar';
 
 export default function LocationsView() {
   const { trip_id = '' } = useParams<{ trip_id: string }>();
@@ -81,7 +80,7 @@ export default function LocationsView() {
         const input = document.getElementById('search-box') as HTMLInputElement;
         const autoComplete = new google.maps.places.Autocomplete(input);
         autoComplete.setFields(['place_id', 'geometry', 'name']);
-        
+
         setAutocomplete(autoComplete);
         setMap(googleMap);
 
@@ -146,10 +145,10 @@ export default function LocationsView() {
   const handleDeleteLocation = (id: string, event: React.MouseEvent) => {
     // Stop event propagation to avoid triggering the map centering
     event.stopPropagation();
-  
+
     // Remove the place from state (this will remove it from the list of places)
     setPlaces((prevPlaces) => prevPlaces.filter((place) => place.id !== id));
-  
+
     // Remove the corresponding marker from the map
     const marker = markersRef.current.get(id);
     if (marker) {
@@ -157,7 +156,7 @@ export default function LocationsView() {
       markersRef.current.delete(id); // Remove from markers map
     }
   };
-  
+
 
   // Function to handle location card click to center the map
   const handleLocationClick = (place: { id: string; lat: number; lng: number }) => {
@@ -177,7 +176,6 @@ export default function LocationsView() {
 
   return (
     <>
-      <ViewTripViewNavbar trip_id={trip_id || ''} />
       <Box
         sx={{
           minHeight: '100vh',
