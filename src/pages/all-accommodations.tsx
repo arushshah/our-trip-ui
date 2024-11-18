@@ -2,7 +2,7 @@ import { Helmet } from 'react-helmet-async';
 
 import { CONFIG } from 'src/config-global';
 
-import { AllAccommodationsView } from 'src/sections/overview/view/all-accommodations-view';
+import { AllAccommodationsView } from 'src/sections/accommodations/all-accommodations-view';
 
 // ----------------------------------------------------------------------
 

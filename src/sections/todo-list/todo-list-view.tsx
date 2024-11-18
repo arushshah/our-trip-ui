@@ -178,7 +178,7 @@ export function TodoListView() {
           overflowY: 'auto', // Make the view scrollable
         }}
       >
-        <Typography variant="h3" sx={{ mb: 2 }}>
+        <Typography variant="h2" sx={{ mb: 2 }}>
           Action Items
         </Typography>
         <DragDropContext onDragEnd={handleDragEnd}>

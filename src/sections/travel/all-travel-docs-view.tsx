@@ -66,6 +66,7 @@ export function AllTravelDocsView() {
       <Typography variant="h2" sx={{ mb: 2 }}>
         Here are your travel documents
       </Typography>
+      <br />
 
       <Grid container spacing={5}>
         {files.map((file, index) => (

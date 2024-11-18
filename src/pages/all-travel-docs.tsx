@@ -2,7 +2,7 @@ import { Helmet } from 'react-helmet-async';
 
 import { CONFIG } from 'src/config-global';
 
-import { AllTravelDocsView } from 'src/sections/overview/view/all-travel-docs-view';
+import { AllTravelDocsView } from 'src/sections/travel/all-travel-docs-view';
 
 // ----------------------------------------------------------------------
 

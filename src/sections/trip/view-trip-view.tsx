@@ -118,15 +118,16 @@ export function ViewTripView() {
 
   const handleDeleteClick = async () => {
     try {
-      await axios.delete(`${apiUrl}/trips/delete-trip`, {
+      await fetch(`${apiUrl}/trips/delete-trip`, {
+        method: 'DELETE',
         headers: {
           Authorization: `Bearer ${localStorage.getItem('idToken')}`,
+          'Content-Type': 'application/json',
         },
-        params: {
-          trip_id
-        }
+        body: JSON.stringify({
+          trip_id,
+        }),
       });
-      // Redirect to another page or update the UI after successful deletion
       navigate('/home'); // Redirect to trips list page
     } catch (error) {
       console.error('Error deleting trip:', error);

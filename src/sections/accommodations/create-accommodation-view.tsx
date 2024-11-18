@@ -74,11 +74,6 @@ const CreateAccommodationView: React.FC = () => {
     }
   };
 
-  const handleCloseSnackbar = () => {
-    setSuccessMessage(null);
-    setErrorMessage(null);
-  };
-
   return (
     <Box sx={{ p: 3, color: 'white' }}>
         <BackButtonView />
@@ -86,21 +81,41 @@ const CreateAccommodationView: React.FC = () => {
         Add Document
       </Typography>
       <form onSubmit={handleSubmit}>
-        <TextField
-          type="file"
-          onChange={handleFileChange}
-          fullWidth
-          sx={{ mb: 2 }}
-          InputLabelProps={{
-            shrink: true,
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'flex-start',
+            gap: 2,
           }}
-          InputProps={{
-            style: { color: '#EEEEEE' },
-          }}
-        />
-        <Button type="submit" variant="contained" color="primary" disabled={uploading}>
-          {uploading ? 'Uploading...' : 'Upload File'}
-        </Button>
+        >
+          <Button
+            variant="contained"
+            component="label"
+            sx={{
+              backgroundColor: 'white',
+              color: 'black',
+              textTransform: 'none',
+              padding: '10px 20px',
+              border: '1px solid black',
+              '&:hover': {
+                backgroundColor: 'black',
+                color: 'white',
+              },
+            }}
+          >
+            {file ? file.name : 'Choose File'}
+            <input
+              type="file"
+              hidden
+              onChange={handleFileChange}
+              accept=".doc,.docx,.xls,.xlsx,.txt,.pdf,.jpg,.jpeg,.png,.tiff,.ppt,.pptx"
+            />
+          </Button>
+          <Button type="submit" variant="contained" color="primary" disabled={uploading || !file}>
+            {uploading ? 'Uploading...' : 'Upload File'}
+          </Button>
+        </Box>
       </form>
       {successMessage && (
         <Alert severity="success" sx={{ mt: 2 }}>

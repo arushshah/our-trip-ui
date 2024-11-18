@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Link as RouterLink, useParams, useNavigate } from 'react-router-dom';
-import { Box, Grid, Typography } from '@mui/material';
+import { Box, Button, Grid, Typography } from '@mui/material';
 import axios from 'axios';
-import {apiUrl} from 'src/config';
+import { _tasks, _posts, _timeline } from 'src/_mock';
+import { apiUrl } from 'src/config';
 import { TripAccommodationEntry } from 'src/sections/accommodations/trip-accommodation-entry';
-import { CreateTripEntry } from './create-trip-entry';
 
 interface FileObject {
   file_name: string;
@@ -22,15 +22,14 @@ export function AllAccommodationsView() {
         if (!token) {
           throw new Error('No access token found');
         }
-        
         const params = new URLSearchParams({
-          trip_id: trip_id || '',
-          document_category: 'accommodation',
+            trip_id: trip_id || '',
+            document_category: 'accommodation',
         });
         const response = await fetch(`${apiUrl}/user_uploads/retrieve-trip-uploads?${params.toString()}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
         });
         const data = await response.json();
         if (data.uploads) {
@@ -47,35 +46,31 @@ export function AllAccommodationsView() {
     try {
       await axios.post(`${apiUrl}/user_uploads/delete-upload`,
         {
-          file_name: fileName,
-          trip_id,
-        },
+            file_name: fileName,
+            trip_id,
+        }, 
         {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('idToken')}`,
-          },        
-        }
-      );
+            headers: {
+                Authorization: `Bearer ${localStorage.getItem('idToken')}`,
+            },
+        });
       setFiles((prevFiles) => prevFiles.filter((file) => file.file_name !== fileName));
     } catch (error) {
-      console.error('Error deleting file:', error);
+        console.error('Error deleting file:', error);
     }
   };
 
   return (
-    <>
     <Box sx={{ p: 3, color: 'white' }}>
-      <Typography variant="h4" sx={{ mb: { xs: 3, md: 5 } }}>
-        Hi, Welcome back 👋
-      </Typography>
 
-      <Typography variant="h3" sx={{ mb: 2 }}>
-        Here are your accommodation documents
+      <Typography variant="h2" sx={{ mb: 2 }}>
+        Here are your accommdation documents
       </Typography>
+      <br />
 
-      <Grid container spacing={3}>
+      <Grid container spacing={5}>
         {files.map((file, index) => (
-          <Grid item xs={12} sm={6} md={6} key={index} sx={{ display: 'flex' }}>
+          <Grid item xs={4} sm={4} md={4} key={index} sx={{ display: 'flex' }}>
             <TripAccommodationEntry trip_id={trip_id || ''} file_name={file.file_name} sx={{ flex: 1, height: '100px' }} onDelete={handleDelete} />
           </Grid>
         ))}
@@ -84,13 +79,26 @@ export function AllAccommodationsView() {
       <br />
       <Grid container spacing={3}>
         <Grid item xs={12} sm={6} md={6}>
-          <RouterLink to={`/create-accommodation/${trip_id}`} style={{ textDecoration: 'none' }}>
-            <CreateTripEntry title="+ Upload new document" sx={{ height: '100px' }} />
-          </RouterLink>
+        <Button
+              component={RouterLink}
+              to={`/create-accommodation/${trip_id}`}
+              variant="outlined"
+              sx={{
+                borderColor: 'white',
+                color: 'white',
+                fontSize: '1.25rem', // Increase font size
+                padding: '12px 24px', // Increase padding
+                '&:hover': {
+                  borderColor: 'white',
+                  backgroundColor: 'rgba(255, 255, 255, 0.1)', // Light background on hover
+                },
+              }}
+            >
+              Upload new document
+            </Button>
         </Grid>
       </Grid>
     </Box>
-    </>
   );
 }
 

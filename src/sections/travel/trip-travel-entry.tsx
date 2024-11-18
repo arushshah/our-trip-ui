@@ -5,8 +5,8 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import {apiUrl} from 'src/config';
 import mammoth from 'mammoth';
 import * as XLSX from 'xlsx';
-import WordViewer from './WordViewer';
-import ExcelViewer from './ExcelViewer';
+import WordViewer from 'src/components/WordViewer';
+import ExcelViewer from 'src/components/ExcelViewer';
 
 interface TripTravelEntryProps {
   trip_id: string;

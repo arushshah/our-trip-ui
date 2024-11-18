@@ -1,10 +1,11 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Box, Typography, TextField, Button, Collapse, IconButton, Dialog, DialogActions, DialogContent, DialogTitle, Checkbox, FormControlLabel, RadioGroup, Radio } from '@mui/material';
+import { Box, Typography, TextField, Button, Collapse, IconButton, Dialog, DialogActions, DialogContent, DialogTitle, Checkbox, FormControlLabel, RadioGroup, Radio, Fab } from '@mui/material';
 import { useParams } from 'react-router-dom';
 import { apiUrl, mapsKey } from 'src/config';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import DeleteIcon from '@mui/icons-material/Delete';
+import AddIcon from '@mui/icons-material/Add';
 
 export default function LocationsView() {
   const { trip_id = '' } = useParams<{ trip_id: string }>();
@@ -27,7 +28,7 @@ export default function LocationsView() {
     (place: { name: string; lat: number; lng: number; place_id: string, category: string }) => {
       setSelectedPlaceDetails(place);
       setSelectedPlaceName(place.name);
-      setSelectedPlaceCategory(place.category); // Ensure selectedCategory is stable
+      setSelectedPlaceCategory(!place.category ? 'Unassigned' : place.category); // Ensure selectedCategory is stable
       setIsEditing(true);
       setOpenDialog(true);
     },
@@ -96,6 +97,9 @@ export default function LocationsView() {
       }
     } catch (error) {
       console.error('Error fetching locations:', error);
+    }
+    finally {
+      setSelectedPlaceCategory(''); // Reset selected categories
     }
   }, [map, trip_id, handleEditPlace]);
   
@@ -204,7 +208,7 @@ export default function LocationsView() {
       lat: selectedPlaceDetails.lat,
       lng: selectedPlaceDetails.lng,
       place_id: selectedPlaceDetails.place_id,
-      category: selectedPlaceCategory,
+      category: selectedPlaceCategory === 'Unassigned' ? null : selectedPlaceCategory,
     };
   
     console.log(newLocationData);
@@ -246,6 +250,9 @@ export default function LocationsView() {
         console.error('Error adding location:', error);
         setErrorMessage('An error occurred while adding the location. Please try again.');
       }
+      finally {
+        setSelectedPlaceCategory(''); // Reset selected categories
+      }
     } else {
       // PUT request to update location in the backend
       try {
@@ -270,6 +277,9 @@ export default function LocationsView() {
         console.error('Error updating location:', error);
         setErrorMessage('An error occurred while updating the location. Please try again.');
       }
+      finally {
+        setSelectedPlaceCategory(''); // Reset selected categories
+      }
     }
   };
   
@@ -278,7 +288,6 @@ export default function LocationsView() {
     if (!selectedPlaceDetails) {
       return;
     }
-  
     try {
       const response = await fetch(`${apiUrl}/trip_locations/delete-location`, {
         method: 'DELETE',
@@ -315,6 +324,9 @@ export default function LocationsView() {
       console.error('Error deleting location:', error);
       setErrorMessage('An error occurred while deleting the location. Please try again.');
     }
+    finally {
+      setSelectedPlaceCategory(''); // Reset selected categories
+    }
   };
 
   const toggleCategoryExpanded = (category: string) => {
@@ -350,16 +362,27 @@ export default function LocationsView() {
     
   };
 
-  const handleDeleteCategory = (category: string) => {
-    const updatedCategories = { ...categorizedData };
-    delete updatedCategories[category];  // Delete the category
-    setCategorizedData(updatedCategories);
+  const handleDeleteCategory = async (category: string) => {
+    await fetch(`${apiUrl}/trip_locations/delete-category`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${localStorage.getItem('idToken')}`,  // Assuming you're using a token for authorization
+      },
+      body: JSON.stringify({category, trip_id}),
+    })
+    .then(() => getLocations())
+    .catch((error) => {
+      console.error('Error deleting category:', error);
+      setErrorMessage('An error occurred while deleting the category. Please try again.');
+    });
+    getLocations();
   };
 
-  const handleMarkerClick = (place: any) => {
+  const handlePlaceEntryClick = (place: any) => {
     if (map) {
       map.setCenter({ lat: place.lat, lng: place.lng });
-      map.setZoom(15);
+      map.setZoom(18);
     }
   }
 
@@ -372,48 +395,63 @@ export default function LocationsView() {
   return (
     <>
       <Box sx={{ minHeight: '100vh', backgroundColor: '#222831', color: '#EEEEEE', padding: 3, overflowY: 'auto' }}>
-        <Typography variant="h3" sx={{ mb: 2 }}>
+        <Typography variant="h2" sx={{ mb: 2 }}>
           Saved Locations
         </Typography>
 
         <TextField id="search-box" label="Search for places" fullWidth variant="outlined" sx={{ mb: 2 }} />
 
-        <div ref={mapRef} style={{ width: '100%', height: '400px' }} />
+        <div ref={mapRef} style={{ width: '100%', height: '500px' }} />
+        <br />
 
-        <Box sx={{ mt: 2, display: 'flex', alignItems: 'center' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
           <TextField
-            label="New Category Name"
-            value={newCategoryName}
-            onChange={(e) => setNewCategoryName(e.target.value)}
+            label="New Category"
             variant="outlined"
-            sx={{ marginRight: 2 }}
+            InputProps={{
+              style: { color: '#EEEEEE' },
+            }}
           />
-          <Button
-            variant="contained"
-            sx={{ backgroundColor: '#ee6c4d', '&:hover': { backgroundColor: '#f7b7a3' } }}
+          <Fab
+            variant="extended"
+            sx={{
+              backgroundColor: '#00BFFF',
+              '&:hover': { backgroundColor: '#005f8a' },
+              color: 'white',
+            }}
             onClick={handleCreateCategory}
           >
+            <AddIcon sx={{ mr: 1 }} />
             Create Category
-          </Button>
+          </Fab>
         </Box>
 
-        <Button
-          variant="contained"
-          color="primary"
-          sx={{ mt: 2 }}
-          onClick={() => toggleAllExpanded(true)}
-        >
-          Expand All
-        </Button>
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+          <Button
+            variant="contained"
+            color="primary"
+            sx={{
+              backgroundColor: '#a3c1a1', // Darker pastel green color
+              '&:hover': { backgroundColor: '#82a884' }, // Slightly darker pastel green color
+              mr: 2,
+            }}
+            onClick={() => toggleAllExpanded(true)}
+          >
+            Expand All
+          </Button>
 
-        <Button
-          variant="contained"
-          color="secondary"
-          sx={{ mt: 2, ml: 2 }}
-          onClick={() => toggleAllExpanded(false)}
-        >
-          Collapse All
-        </Button>
+          <Button
+            variant="contained"
+            color="secondary"
+            sx={{
+              backgroundColor: '#8aa6c1', // Darker pastel blue color
+              '&:hover': { backgroundColor: '#6b8ba4' }, // Slightly darker pastel blue color
+            }}
+            onClick={() => toggleAllExpanded(false)}
+          >
+            Collapse All
+          </Button>
+        </Box>
         {Object.keys(categorizedData).map((category) => (
           <Box key={category} sx={{ mt: 2 }}>
             <Box sx={{ display: 'flex', alignItems: 'center' }}>
@@ -434,25 +472,39 @@ export default function LocationsView() {
               </IconButton>
             </Box>
 
-            <Collapse in={expanded[category]}>
-              {categorizedData[category].map((place: any) => (
-                <Box
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', ml: 2 }}>
+              <Collapse in={expanded[category]}>
+                {categorizedData[category].map((place: any) => (
+                  <Box
                   key={place.place_id}
                   sx={{
                     mt: 1,
                     display: 'flex',
                     justifyContent: 'space-between',
+                    alignItems: 'center',
                     cursor: 'pointer',
+                    padding: '8px 16px',
+                    borderRadius: '4px',
                     '&:hover': {
                       backgroundColor: '#444851',
                     },
                   }}
-                  onClick={() => handleMarkerClick(place)}
+                  onClick={() => handlePlaceEntryClick(place)}
                 >
-                  <Typography>{place.name}</Typography>
+                  <Typography
+                    variant="h6"
+                    sx={{
+                      color: '#ffffff',
+                      fontWeight: 'bold',
+                      textShadow: '1px 1px 2px rgba(0, 0, 0, 0.5)',
+                    }}
+                  >
+                    {place.name}
+                  </Typography>
                 </Box>
-              ))}
-            </Collapse>
+                ))}
+              </Collapse>
+            </Box>
           </Box>
         ))}
       </Box>
@@ -472,15 +524,9 @@ export default function LocationsView() {
         <div>
           <Typography variant='subtitle2'>Select Category</Typography>
           <RadioGroup
-            value={selectedPlaceCategory === '' ? 'None' : selectedPlaceCategory}
+            value={selectedPlaceCategory === '' ? 'Unassigned' : selectedPlaceCategory}
             onChange={(event) => setSelectedPlaceCategory(event.target.value)}
           >
-            <FormControlLabel
-                key="None"
-                value="None"
-                control={<Radio />}
-                label="None"
-              />
             {Object.keys(categorizedData).map((category) => (
               <FormControlLabel
                 key={category}

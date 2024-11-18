@@ -1,9 +1,7 @@
 import { Helmet } from 'react-helmet-async';
-import { useParams } from 'react-router-dom';
-
 import { CONFIG } from 'src/config-global';
 
-import { ViewInviteView } from 'src/sections/invite/view';
+import { ViewInviteView } from 'src/sections/invite';
 
 // ----------------------------------------------------------------------
 

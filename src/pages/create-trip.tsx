@@ -2,7 +2,7 @@ import { Helmet } from 'react-helmet-async';
 
 import { CONFIG } from 'src/config-global';
 
-import { CreateTripView } from 'src/sections/trip/view';
+import { CreateTripView } from 'src/sections/trip';
 
 // ----------------------------------------------------------------------
 

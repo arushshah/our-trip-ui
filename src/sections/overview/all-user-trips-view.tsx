@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
 import { Link, Link as RouterLink } from 'react-router-dom';
-import { Box, Grid, Typography } from '@mui/material';
+import { Box, Fab, Grid, Typography } from '@mui/material';
+import AddIcon from '@mui/icons-material/Add';
 import {apiUrl} from 'src/config';
 import { _tasks, _posts, _timeline } from 'src/_mock';
 import { DashboardContent } from 'src/layouts/dashboard';
 import { getAuth } from 'firebase/auth';
 import { UserTripEntry } from './user-trip-entry';
-import { CreateTripEntry } from './create-trip-entry';
+import { CreateTripEntry } from '../trip/create-trip-entry';
 
 interface UserTrip {
   trip_name: string;
@@ -95,7 +96,17 @@ export function AllUserTripsView() {
       <Grid container spacing={3}>
       <Grid item xs={12} sm={6} md={6}>
         <RouterLink to="/create-trip" style={{ textDecoration: 'none' }}>
-            <CreateTripEntry title="+ Create New Trip"/>
+        <Fab
+            variant="extended"
+            sx={{
+              backgroundColor: '#00BFFF',
+              '&:hover': { backgroundColor: '#005f8a' },
+              color: 'white',
+            }}
+          >
+            <AddIcon sx={{ mr: 1 }} />
+            Create New Trip
+          </Fab>
         </RouterLink>
         </Grid>
       </Grid>

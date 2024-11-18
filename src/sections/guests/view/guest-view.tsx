@@ -1,7 +1,22 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import axios from 'axios';
-import { Box, Typography, Table, TableHead, TableBody, TableRow, TableCell, IconButton, TextField, Button, CircularProgress } from '@mui/material';
-import {apiUrl} from 'src/config';
+import {
+  Box,
+  Typography,
+  Table,
+  TableHead,
+  TableBody,
+  TableRow,
+  TableCell,
+  IconButton,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Button,
+  CircularProgress
+} from '@mui/material';
+import { apiUrl } from 'src/config';
 
 interface Guest {
   guest_username: string;
@@ -19,6 +34,8 @@ interface GuestViewProps {
 export default function GuestView({ trip_id, show_invited_guests }: GuestViewProps) {
   const [guests, setGuests] = useState<Guest[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [openDialog, setOpenDialog] = useState<boolean>(false);
+  const [guestToDelete, setGuestToDelete] = useState<string | null>(null);
 
   const fetchTripDetails = useCallback(async () => {
     try {
@@ -49,59 +66,95 @@ export default function GuestView({ trip_id, show_invited_guests }: GuestViewPro
 
   const handleDelete = async (guest_username: string) => {
     try {
-      await axios.delete(`{${apiUrl}/trip_guests/delete-trip-guest`, {
+      await axios.delete(`${apiUrl}/trip_guests/delete-trip-guest`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('idToken')}`,
         },
         data: { trip_guest_username: guest_username, trip_id }
       });
+      setOpenDialog(false); // Close the dialog after deletion
       fetchTripDetails();
     } catch (error) {
       console.error('Error deleting guest:', error);
     }
   };
 
+  const handleOpenDialog = (guest_username: string) => {
+    setGuestToDelete(guest_username);
+    setOpenDialog(true);
+  };
+
+  const handleCloseDialog = () => {
+    setOpenDialog(false);
+    setGuestToDelete(null);
+  };
+
   return (
     <>
-    <Box sx={{ p: 3, color: 'white' }}>
-      <Typography variant="h4" sx={{ mb: 3, color: 'white' }}>Trip Guests</Typography>
-      <Table>
-        <TableHead>
-          <TableRow>
-            <TableCell sx={{ color: 'white', backgroundColor: '#222831' }}>First Name</TableCell>
-            <TableCell sx={{ color: 'white', backgroundColor: '#222831' }}>Last Name</TableCell>
-            <TableCell sx={{ color: 'white', backgroundColor: '#222831' }}>RSVP Status</TableCell>
-            <TableCell sx={{ color: 'white', backgroundColor: '#222831' }}>Host</TableCell>
-            <TableCell sx={{ color: 'white', backgroundColor: '#222831' }}>Actions</TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {guests.length > 0 ? (
-            guests.map((guest) => (
-              <TableRow key={guest.guest_username}>
-                <TableCell sx={{ color: 'white' }}>{guest.guest_first_name}</TableCell>
-                <TableCell sx={{ color: 'white' }}>{guest.guest_last_name}</TableCell>
-                <TableCell sx={{ color: 'white' }}>{guest.rsvp_status}</TableCell>
-                <TableCell sx={{ color: 'white' }}>{guest.is_host ? 'Yes' : 'No'}</TableCell>
-                <TableCell>
-                  <IconButton
-                    aria-label="delete"
-                    onClick={() => handleDelete(guest.guest_username)}
-                    sx={{ color: 'error.main' }}
-                  >
-                    <Typography variant="h6">X</Typography>
-                  </IconButton>
-                </TableCell>
-              </TableRow>
-            ))
-          ) : (
-            <TableRow key="no-guests">
-              <TableCell colSpan={5} sx={{ color: 'white' }}>No guests found.</TableCell>
+      <Box sx={{ p: 3, color: 'white' }}>
+        <Typography variant="h2" sx={{ mb: 3, color: 'white' }}>Trip Guests</Typography>
+        <Table>
+          <TableHead>
+            <TableRow>
+              <TableCell sx={{ color: 'white', backgroundColor: '#222831', fontSize: '1.5em' }}>Name</TableCell>
+              <TableCell sx={{ color: 'white', backgroundColor: '#222831', fontSize: '1.5em' }}>RSVP</TableCell>
+              <TableCell sx={{ color: 'white', backgroundColor: '#222831', fontSize: '1.5em' }}>Host</TableCell>
+              <TableCell sx={{ color: 'white', backgroundColor: '#222831', fontSize: '1.5em' }}>Actions</TableCell>
             </TableRow>
-          )}
-        </TableBody>
-      </Table>
-    </Box>
+          </TableHead>
+          <TableBody>
+            {guests.length > 0 ? (
+              guests.map((guest) => (
+                <TableRow key={guest.guest_username}>
+                  <TableCell sx={{ color: 'white', fontSize: '1em' }}>
+                    {guest.guest_first_name} {guest.guest_last_name}
+                  </TableCell>
+                  <TableCell sx={{ color: 'white', fontSize: '1em' }}>{guest.rsvp_status}</TableCell>
+                  <TableCell sx={{ color: 'white', fontSize: '1em' }}>
+                    {guest.is_host ? 'Yes' : 'No'}
+                  </TableCell>
+                  <TableCell>
+                    <IconButton
+                      aria-label="delete"
+                      onClick={() => handleOpenDialog(guest.guest_username)}
+                      sx={{ color: 'error.main' }}
+                    >
+                      <Typography variant="h6">X</Typography>
+                    </IconButton>
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : (
+              <TableRow key="no-guests">
+                <TableCell colSpan={5} sx={{ color: 'white' }}>No guests found.</TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </Box>
+
+      {/* Confirmation Dialog */}
+      <Dialog open={openDialog} onClose={handleCloseDialog}>
+        <DialogTitle sx={{ color: 'black' }}>Confirm Deletion</DialogTitle>
+        <DialogContent>
+          <Typography variant="body1" sx={{ color: 'black' }}>
+            Are you sure you want to delete this guest from the trip?
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseDialog} sx={{ color: 'black' }}>Cancel</Button>
+          <Button
+            onClick={() => {
+              if (guestToDelete) {
+                handleDelete(guestToDelete);
+              }
+            }}
+            sx={{ color: 'error.main' }}
+          >
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
     </>
   );
 }
