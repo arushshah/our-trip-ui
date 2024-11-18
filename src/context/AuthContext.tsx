@@ -29,6 +29,7 @@ export function AuthProvider({children}: AuthProviderProps) {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (auth_user) => {
+      // TODO: Fix the way we check if user setup has started, too many calls are being made to this function which is calling validate-user too many times - make it more efficient
       if (localStorage.getItem("userSetupStarted") === "true") {
         return
       }
