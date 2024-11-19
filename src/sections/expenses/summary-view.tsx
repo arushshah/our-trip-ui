@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
 import {
   Box, Typography, List, Card, CardContent, Button, Dialog, DialogActions,
-  DialogContent, DialogTitle, TextField, Checkbox, FormControlLabel, IconButton
+  DialogContent, DialogTitle, TextField, Checkbox, FormControlLabel, IconButton,
+  Grid,
+  Avatar
 } from '@mui/material';
 import {apiUrl} from 'src/config';
 import { useParams } from 'react-router-dom';
@@ -39,6 +41,9 @@ export function SummaryView() {
   const userId = getAuth().currentUser?.uid;
   const [usersSpentAmounts, setUsersSpentAmounts] = useState<Record<string, number>>({});
   const [usersOweAmounts, setUsersOweAmounts] = useState<{ [key: string]: { [key: string]: number } }>({});
+  const formatUserName = (user: TripUser) => `${user?.guest_first_name} ${user?.guest_last_name}`;
+  const displayAmount = (amount: number) => `$${amount.toFixed(2)}`;
+
 
   const fetchExpenses = useCallback(async () => {
     try {
@@ -117,19 +122,58 @@ export function SummaryView() {
   const formatDollarValue = (value: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value);
 
   return (
-    <>
-        <List>
-        {
-            Object.keys(usersSpentAmounts).map((userId1) =>
-                <Typography key={userId1}>{tripUsers.find(user => user.guest_username === userId1)?.guest_first_name} {tripUsers.find(user => user.guest_username === userId1)?.guest_last_name} spent ${usersSpentAmounts[userId1] || 0}</Typography>)
-        }
-        {
-            Object.keys(usersOweAmounts).map((userId2) =>
-                <Typography key={userId2}>
-                    {tripUsers.find(user => user.guest_username === userId2)?.guest_first_name} {tripUsers.find(user => user.guest_username === userId2)?.guest_last_name} owes {Object.keys(usersOweAmounts[userId2]).map((oweUserId) => `${tripUsers.find(user => user.guest_username === oweUserId)?.guest_first_name} ${tripUsers.find(user => user.guest_username === oweUserId)?.guest_last_name} $${usersOweAmounts[userId2][oweUserId]}`).join(', ')}</Typography>)
-        }
-        </List>
-        <Button variant="contained" onClick={() => handleOpenDialog()} sx={{ mt: 2, backgroundColor: '#20C997', '&:hover': { backgroundColor: '#17A589' } }}>Add Expense</Button>
-    </>
+    <List>
+      {/* Users who have spent money */}
+      {Object.keys(usersSpentAmounts).map((userId1) => {
+        const user = tripUsers.find(us => us.guest_username === userId1);
+        return (
+          <Card key={userId1} sx={{ mb: 2 }}>
+            <CardContent>
+              <Grid container spacing={2} alignItems="center">
+                <Grid item>
+                  <Avatar>{user?.guest_first_name[0]}</Avatar> {/* User avatar */}
+                </Grid>
+                <Grid item xs>
+                  <Typography variant="h6">{user ? formatUserName(user) : 'Unknown User'}</Typography>
+                  <Typography variant="body2" color="textSecondary">
+                    lent {displayAmount(usersSpentAmounts[userId1])}
+                  </Typography>
+                </Grid>
+              </Grid>
+            </CardContent>
+          </Card>
+        );
+      })}
+
+      {/* Users who owe money */}
+      {Object.keys(usersOweAmounts).map((userId2) => {
+        const user = tripUsers.find(us => us.guest_username === userId2);
+        return (
+          <Card key={userId2} sx={{ mb: 2 }}>
+            <CardContent>
+              <Grid container spacing={2} alignItems="center">
+                <Grid item>
+                  <Avatar>{user?.guest_first_name[0]}</Avatar> {/* User avatar */}
+                </Grid>
+                <Grid item xs>
+                  <Typography variant="h6">{user ? formatUserName(user) : 'Unknown User'}</Typography>
+                  <Typography variant="body2" color="textSecondary">
+                    borrowed from:
+                  </Typography>
+                  {Object.keys(usersOweAmounts[userId2]).map((oweUserId, index) => {
+                    const oweUser = tripUsers.find(us => us.guest_username === oweUserId);
+                    return (
+                      <Typography key={oweUserId} variant="body2" color="textSecondary">
+                        {oweUser ? `${formatUserName(oweUser)} ${displayAmount(usersOweAmounts[userId2][oweUserId])}` : 'Unknown User'}
+                      </Typography>
+                    );
+                  })}
+                </Grid>
+              </Grid>
+            </CardContent>
+          </Card>
+        );
+      })}
+    </List>
   );
 }

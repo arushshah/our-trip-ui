@@ -195,7 +195,7 @@ export function BalanceSheet() {
               <CardContent>
                 <Typography variant="h6">{expense.title}</Typography>
                 <Typography variant="body2">Amount: {formatDollarValue(expense.amount)}</Typography>
-                <Typography variant="body2">User: {expense.userFirstName} {expense.userLastName}</Typography>
+                <Typography variant="body2">Payer: {expense.userFirstName} {expense.userLastName}</Typography>
               </CardContent>
             </Card>
           ))}
