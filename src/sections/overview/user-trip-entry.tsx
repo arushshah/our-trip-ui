@@ -4,9 +4,9 @@ import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import Avatar from '@mui/material/Avatar';
 import Typography from '@mui/material/Typography';
-import { varAlpha } from 'src/theme/styles';
-
 import { SvgColor } from 'src/components/svg-color';
+import UnsplashImage from './UnsplashImage';
+
 
 // ----------------------------------------------------------------------
 
@@ -58,16 +58,18 @@ export function UserTripEntry({
 
   const renderCover = (
     <Box
-      component="img"
-      src='/assets/images/cover/cover-1.webp'
       sx={{
         top: 0,
         width: 1,
         height: 1,
-        objectFit: 'cover',
         position: 'absolute',
+        overflow: 'hidden', // Ensure the image does not overflow the box
       }}
-    />
+    >
+      <UnsplashImage
+        destination={post.title}
+      />
+    </Box>
   );
 
   const renderDate = (
@@ -116,9 +118,7 @@ export function UserTripEntry({
               content: "''",
               width: '100%',
               height: '100%',
-              position: 'absolute',
-              bgcolor: varAlpha(theme.palette.grey['900Channel'], 0.72),
-            },
+              position: 'absolute',            },
           }),
           ...(latestPostLarge && {
             pt: {

@@ -30,7 +30,6 @@ export function AllUserTripsView() {
 
         const auth = getAuth();
         const idToken = await auth.currentUser?.getIdToken();
-        console.log("REFRESH TOKEN")
         
         const response = await fetch(`${apiUrl}/trips/get-user-trips`, {
           headers: {
