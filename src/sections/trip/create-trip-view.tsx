@@ -22,10 +22,6 @@ export function CreateTripView() {
         throw new Error('No access token found');
       }
 
-      // format the dates as a string in mm/dd/yyyy
-      const formattedStartDate = new Date(startDate).toLocaleDateString();
-      const formattedEndDate = new Date(endDate).toLocaleDateString();
-
       const response = await fetch(`${apiUrl}/trips/create-trip`, {
         method: 'POST',
         headers: {
@@ -35,8 +31,8 @@ export function CreateTripView() {
         body: JSON.stringify({
           trip_name: tripName,
           trip_description: tripDescription,
-          trip_start_date: formattedStartDate,
-          trip_end_date: formattedEndDate
+          trip_start_date: startDate,
+          trip_end_date: endDate
         }),
       });
 

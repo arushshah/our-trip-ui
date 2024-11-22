@@ -181,93 +181,79 @@ export function TodoListView() {
         <Typography variant="h2" sx={{ mb: 2 }}>
           Action Items
         </Typography>
-        <DragDropContext onDragEnd={handleDragEnd}>
-          <Droppable droppableId="todos">
-            {(droppableProvided) => (
-              <List {...droppableProvided.droppableProps} ref={droppableProvided.innerRef}>
-                {todos.map((todo, index) => (
-                  <Draggable key={todo.id} draggableId={todo.id.toString()} index={index}>
-                    {(draggableProvided) => (
-                      <ListItem
-                        ref={draggableProvided.innerRef}
-                        {...draggableProvided.draggableProps}
-                        {...draggableProvided.dragHandleProps}
-                        disablePadding
-                      >
-                        <IconButton edge="start" aria-label="delete" onClick={() => handleDelete(todo.id)}>
-                          <DeleteIcon sx={{ color: '#DC3545' }} />
-                        </IconButton>
-                        <ListItemIcon>
-                          <Checkbox
-                            edge="start"
-                            checked={todo.checked}
-                            tabIndex={-1}
-                            disableRipple
-                            onClick={() => handleToggle(todo.id, todo.text)}
-                            sx={{
-                              color: '#20C997',
-                              '&.Mui-checked': {
-                                color: '#20C997',
-                              },
-                            }}
-                          />
-                        </ListItemIcon>
-                        <TextField
-                          value={todo.text}
-                          onChange={(e) => handleEditTodo(todo.id, e.target.value)}
-                          onBlur={() => handleUpdateTodo(todo.id, todo.text)}
-                          onKeyPress={(e) => handleKeyPressEdit(e, todo.id, todo.text)}
-                          variant="standard"
-                          sx={{
-                            flex: 1,
-                            borderRadius: 1,
-                            input: { color: '#EEEEEE' },
-                          }}
-                          InputProps={{
-                            disableUnderline: true
-                          }}
-                        />
-                      </ListItem>
-                    )}
-                  </Draggable>
-                ))}
-                {droppableProvided.placeholder}
-                <ListItem>
-                  <TextField
-                    variant="outlined"
-                    placeholder="Add new to-do"
-                    value={newTodo}
-                    onChange={(e) => setNewTodo(e.target.value)}
-                    onKeyPress={handleKeyPress}
-                    inputProps={{
-                      style: { color: '#EEEEEE' },
-                      maxLength: 500,
-                    }}
+          <List>
+            {todos.map((todo, index) => (    
+              <ListItem key={todo.id}>
+                <IconButton edge="start" aria-label="delete" onClick={() => handleDelete(todo.id)}>
+                  <DeleteIcon sx={{ color: '#DC3545' }} />
+                </IconButton>
+                <ListItemIcon>
+                  <Checkbox
+                    edge="start"
+                    checked={todo.checked}
+                    tabIndex={-1}
+                    disableRipple
+                    onClick={() => handleToggle(todo.id, todo.text)}
                     sx={{
-                      mr: 2,
-                      borderRadius: 1,
-                      height: '56px',
-                      width: '50%',
-                    }} 
-                  />
-                  <Button
-                    variant="contained"
-                    onClick={handleAddTodo}
-                    sx={{
-                      backgroundColor: '#20C997',
-                      '&:hover': {
-                        backgroundColor: '#17A589',
+                      color: '#20C997',
+                      '&.Mui-checked': {
+                        color: '#20C997',
                       },
-                      height: '30px', // Same height as the TextField
                     }}
-                  >
-                    Add
-                  </Button>
-                </ListItem>
-              </List>
-            )}
-          </Droppable>
-        </DragDropContext>
+                  />
+                </ListItemIcon>
+                <TextField
+                  value={todo.text}
+                  onChange={(e) => handleEditTodo(todo.id, e.target.value)}
+                  onBlur={() => handleUpdateTodo(todo.id, todo.text)}
+                  onKeyPress={(e) => handleKeyPressEdit(e, todo.id, todo.text)}
+                  variant="standard"
+                  sx={{
+                    flex: 1,
+                    borderRadius: 1,
+                    input: { color: '#EEEEEE' },
+                  }}
+                  InputProps={{
+                    disableUnderline: true
+                  }}
+                />
+              </ListItem>
+            ))}
+          </List>
+          <List>
+            <ListItem>
+              <TextField
+                variant="outlined"
+                placeholder="Add new to-do"
+                value={newTodo}
+                onChange={(e) => setNewTodo(e.target.value)}
+                onKeyPress={handleKeyPress}
+                inputProps={{
+                  style: { color: '#EEEEEE' },
+                  maxLength: 500,
+                }}
+                sx={{
+                  mr: 2,
+                  borderRadius: 1,
+                  height: '56px',
+                  width: '50%',
+                }} 
+              />
+              <Button
+                variant="contained"
+                onClick={handleAddTodo}
+                sx={{
+                  backgroundColor: '#20C997',
+                  '&:hover': {
+                    backgroundColor: '#17A589',
+                  },
+                  height: '30px', // Same height as the TextField
+                }}
+              >
+                Add
+              </Button>
+            </ListItem>
+          </List>
       </Box>
     </>
   );

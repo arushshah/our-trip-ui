@@ -34,7 +34,6 @@ export function AccountPopover({ data = [], sx, ...other }: AccountPopoverProps)
 
   const handleSignOut = async () => {
     try {
-      await firebaseSignOut(auth);
       signOut(); // Call the signOut function from AuthContext to update the state
       router.push('/sign-in'); // Redirect to the sign-in page
     } catch (error) {

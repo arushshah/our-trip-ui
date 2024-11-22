@@ -114,6 +114,7 @@ export default function GuestView({ trip_id, show_invited_guests }: GuestViewPro
                     {guest.is_host ? 'Yes' : 'No'}
                   </TableCell>
                   <TableCell>
+                    {!guest.is_host &&
                     <IconButton
                       aria-label="delete"
                       onClick={() => handleOpenDialog(guest.guest_username)}
@@ -121,6 +122,7 @@ export default function GuestView({ trip_id, show_invited_guests }: GuestViewPro
                     >
                       <Typography variant="h6">X</Typography>
                     </IconButton>
+                    }
                   </TableCell>
                 </TableRow>
               ))

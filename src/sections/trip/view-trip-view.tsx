@@ -1,9 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {apiUrl} from 'src/config';
-import { Box, Typography, TextField, Button, FormControl, InputLabel, Select, MenuItem, SelectChangeEvent, InputAdornment } from '@mui/material';
+import { Box, Typography, TextField, Button, FormControl, InputLabel, Select, MenuItem, SelectChangeEvent, InputAdornment, DialogActions, Dialog, DialogContent, DialogContentText, DialogTitle, RadioGroup, FormControlLabel, Radio } from '@mui/material';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import axios from 'axios';
-
+import { jwtDecode } from 'jwt-decode';
 
 interface Trip {
   trip_name: string;
@@ -13,9 +12,18 @@ interface Trip {
   trip_token: string;
 }
 
+interface Guest {
+  guest_username: string;
+  guest_first_name: string;
+  guest_last_name: string;
+  is_host: boolean;
+  rsvp_status: string;
+}
+
 export function ViewTripView() {
   const { trip_id = '' } = useParams<{ trip_id: string }>();
-  
+  const [guestInfo, setGuestInfo] = useState<Guest>();
+  const [guests, setGuests] = useState<Guest[]>([]);
   const location = useLocation();
   const navigate = useNavigate();
   const [trip, setTrip] = useState<Trip>({
@@ -25,13 +33,67 @@ export function ViewTripView() {
     trip_end_date: location.state?.trip_end_date || '',
     trip_token: location.state?.trip_token || '',
   });
-  interface Guest {
-    rsvp_status: string;
-    is_host: boolean;
-  }
-  
-  const [guestInfo, setGuestInfo] = useState<Guest>();
+
   const [rsvpResponse, setRsvpResponse] = React.useState('');
+  const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
+  const [openLeaveDialog, setOpenLeaveDialog] = useState(false);
+  const [openNewHostDialog, setOpenNewHostDialog] = useState(false);
+  const [selectedNewHost, setSelectedNewHost] = useState('');
+  
+  const handleOpenDeleteDialog = () => {
+    setOpenDeleteDialog(true);
+  };
+
+  const handleCloseDeleteDialog = () => {
+    setOpenDeleteDialog(false);
+  };
+
+  const handleOpenLeaveDialog = () => {
+    setOpenLeaveDialog(true);
+  };
+
+  const handleCloseLeaveDialog = () => {
+    setOpenLeaveDialog(false);
+  };
+
+  const handleConfirmDelete = () => {
+    handleDeleteClick();
+    setOpenDeleteDialog(false);
+  };
+
+  const handleConfirmLeave = () => {
+    if (guestInfo?.is_host) {
+      setOpenLeaveDialog(false);
+      setOpenNewHostDialog(true);
+    } else {
+      handleLeaveClick();
+      setOpenLeaveDialog(false);
+    }
+  };
+
+  const handleNewHostChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setSelectedNewHost((event.target as HTMLInputElement).value);
+  };
+
+  const handleConfirmNewHost = async () => {
+    try {
+      await fetch(`${apiUrl}/trip_guests/set-new-host`, {
+        method: 'PUT',
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('idToken')}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          trip_id,
+          new_host_id: selectedNewHost,
+        }),
+      });
+      handleLeaveClick();
+    } catch (error) {
+      console.error('Error leaving trip:', error);
+    }
+    setOpenNewHostDialog(false);
+  };
 
   const formatDate = (dateString: string) => {
     const options: Intl.DateTimeFormatOptions = { year: 'numeric', month: 'long', day: 'numeric' };
@@ -87,22 +149,29 @@ export function ViewTripView() {
         console.error('Error fetching trip details:', error);
       }
     };
-    const getGuestInfo = async () => {
+    const fetchGuestList = async () => {
       try {
-        const response = await fetch(`${apiUrl}/trip_guests/get-guest-info?trip_id=${trip_id}`, {
-          method: "GET",
+        const token = localStorage.getItem('idToken');
+        if (!token) {
+          throw new Error('No access token found');
+        }
+        const response = await fetch(`${apiUrl}/trip_guests/get-trip-guests?trip_id=${trip_id}`, {
           headers: {
-            Authorization: `Bearer ${localStorage.getItem('idToken')}`,
-          }
+            Authorization: `Bearer ${token}`,
+          },
         });
+        const decoded_token = jwtDecode<{ user_id: string }>(token);
         const data = await response.json();
-        setGuestInfo(data.guest);
+        data.guests = data.guests.filter((guest: Guest) => guest.rsvp_status === 'YES');
+        setGuests(data.guests);
+        setGuestInfo(data.guests.find((guest: Guest) => guest.guest_username === decoded_token.user_id));
       } catch (error) {
         console.error('Error fetching trip details:', error);
       }
     };
+
     fetchTripDetails();
-    getGuestInfo();
+    fetchGuestList();
   }, [trip_id]);
 
   const handleEditClick = () => {
@@ -131,6 +200,24 @@ export function ViewTripView() {
       navigate('/home'); // Redirect to trips list page
     } catch (error) {
       console.error('Error deleting trip:', error);
+    }
+  };
+
+  const handleLeaveClick = async () => {
+    try {
+      await fetch(`${apiUrl}/trip_guests/delete-trip-guest`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('idToken')}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          trip_id,
+        }),
+      });
+      navigate('/home'); // Redirect to trips list page
+    } catch (error) {
+      console.error('Error leaving trip:', error);
     }
   };
 
@@ -248,19 +335,112 @@ export function ViewTripView() {
         </Box>
       <br />
       <br />
+      {guestInfo?.is_host === true && (
+        <>
+          <Button
+            variant="contained"
+            color="error"
+            onClick={handleOpenDeleteDialog}
+            sx={{
+              backgroundColor: '#DC3545', // Red color for Delete button
+              '&:hover': {
+                backgroundColor: '#C82333', // Darker red on hover
+              },
+              mr: 2, // Add right margin to the Delete button
+            }}
+          >
+            Delete Trip
+          </Button>
+          <Dialog
+            open={openDeleteDialog}
+            onClose={handleCloseDeleteDialog}
+            aria-labelledby="delete-dialog-title"
+            aria-describedby="delete-dialog-description"
+          >
+            <DialogTitle id="delete-dialog-title">Confirm Delete</DialogTitle>
+            <DialogContent>
+              <DialogContentText id="delete-dialog-description">
+                Are you sure you want to delete this trip? This action cannot be undone.
+              </DialogContentText>
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={handleCloseDeleteDialog} color="primary">
+                Cancel
+              </Button>
+              <Button onClick={handleConfirmDelete} color="error">
+                Delete
+              </Button>
+            </DialogActions>
+          </Dialog>
+        </>
+      )}
       <Button
         variant="contained"
         color="error"
-        onClick={handleDeleteClick}
+        onClick={handleOpenLeaveDialog}
         sx={{
-          backgroundColor: '#DC3545', // Red color for Delete button
+          backgroundColor: '#DC3545', // Red color for Leave button
           '&:hover': {
             backgroundColor: '#C82333', // Darker red on hover
           },
         }}
       >
-        Delete Trip
+        Leave Trip
       </Button>
+      <Dialog
+        open={openLeaveDialog}
+        onClose={handleCloseLeaveDialog}
+        aria-labelledby="leave-dialog-title"
+        aria-describedby="leave-dialog-description"
+      >
+        <DialogTitle id="leave-dialog-title">Confirm Leave</DialogTitle>
+        <DialogContent>
+          <DialogContentText id="leave-dialog-description">
+            Are you sure you want to leave this trip?
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseLeaveDialog} color="primary">
+            Cancel
+          </Button>
+          <Button onClick={handleConfirmLeave} color="error">
+            Leave
+          </Button>
+        </DialogActions>
+      </Dialog>
+      <Dialog
+        open={openNewHostDialog}
+        onClose={() => setOpenNewHostDialog(false)}
+        aria-labelledby="new-host-dialog-title"
+        aria-describedby="new-host-dialog-description"
+      >
+        <DialogTitle id="new-host-dialog-title">Select New Host</DialogTitle>
+        <DialogContent>
+          <DialogContentText id="new-host-dialog-description">
+            Please select a new host for this trip.
+          </DialogContentText>
+          <RadioGroup value={selectedNewHost} onChange={handleNewHostChange}>
+            {guests.map((guest) => 
+              guest.guest_username !== guestInfo?.guest_username &&     
+              (
+                <FormControlLabel
+                  key={guest.guest_username}
+                  value={guest.guest_username}
+                  control={<Radio />}
+                  label={`${guest.guest_first_name} ${guest.guest_last_name}`}
+                />
+            ))}
+          </RadioGroup>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenNewHostDialog(false)} color="primary">
+            Cancel
+          </Button>
+          <Button onClick={handleConfirmNewHost} color="primary">
+            Confirm
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
     </>
   );

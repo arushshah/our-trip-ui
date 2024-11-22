@@ -1,12 +1,7 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useState } from 'react';
 import {
-  Box, Typography, List, Card, CardContent, Button, Dialog, DialogActions,
-  DialogContent, DialogTitle, TextField, Checkbox, FormControlLabel, IconButton
+  Box, Typography
 } from '@mui/material';
-import DeleteIcon from '@mui/icons-material/Delete';
-import {apiUrl} from 'src/config';
-import { useParams } from 'react-router-dom';
-import { getAuth } from 'firebase/auth';
 import ExpensesNavbar from './expenses-navbar';
 import { BalanceSheet } from './balance-sheet';
 import { SummaryView } from './summary-view';

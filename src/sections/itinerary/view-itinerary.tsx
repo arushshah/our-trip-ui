@@ -7,40 +7,42 @@ import dayjs from 'dayjs';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import DeleteIcon from '@mui/icons-material/Delete';
+import { v4 as uuidv4 } from 'uuid';
 
 export function ViewItinerary() {
   const { trip_id = '' } = useParams<{ trip_id: string }>();
 
-  const [tripStartDate, setTripStartDate] = useState<string>('');
-  const [tripEndDate, setTripEndDate] = useState<string>('');
-  const [itinerary, setItinerary] = useState<Record<string, string[]>>({});
+  const [itinerary, setItinerary] = useState<Record<string, {id: string; description: string}[]>>({});
   const [expandedDates, setExpandedDates] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
-    const fetchTripDetails = async () => {
+    const fetchCurrentItinerary = async () => {
       try {
         const auth = getAuth();
         const idToken = await auth.currentUser?.getIdToken();
 
-        const response = await fetch(`${apiUrl}/trips/get-trip?trip_id=${trip_id}`, {
+        const response = await fetch(`${apiUrl}/trip_itinerary/get-itinerary?trip_id=${trip_id}`, {
           headers: {
             Authorization: `Bearer ${idToken}`,
           },
         });
 
         const data = await response.json();
-        setTripStartDate(data.trip_details.trip_start_date);
-        setTripEndDate(data.trip_details.trip_end_date);
+        console.log(data);
 
-        const start = dayjs(data.trip_details.trip_start_date);
-        const end = dayjs(data.trip_details.trip_end_date);
-        const tempItinerary: Record<string, string[]> = {};
+        const tempItinerary: Record<string, {id: string; description: string}[]> = {};
         const tempExpandedDates: Record<string, boolean> = {};
-        for (let date = start; date <= end; date = date.add(1, 'day')) {
-          const formattedDate = date.format('YYYY-MM-DD');
-          tempItinerary[formattedDate] = [];
-          tempExpandedDates[formattedDate] = true;
-        }
+
+        data.itinerary.forEach((entry: { date: string; description: string, id: string }) => {
+            tempExpandedDates[entry.date] = true;
+            if (!tempItinerary[entry.date]) {
+                tempItinerary[entry.date] = [];
+            }
+            if (entry.description.trim().length > 0) {
+                tempItinerary[entry.date].push({id: entry.id, description: entry.description});
+            }
+            });
+
         setItinerary(tempItinerary);
         setExpandedDates(tempExpandedDates);
 
@@ -49,7 +51,7 @@ export function ViewItinerary() {
       }
     };
 
-    fetchTripDetails();
+    fetchCurrentItinerary();
   }, [trip_id]);
 
   const toggleExpand = (date: string) => {
@@ -59,26 +61,102 @@ export function ViewItinerary() {
     }));
   };
 
-  const addEntry = (date: string, entry: string) => {
+  const addEntry = async (date: string, entry: string) => {
+    const newEntry = { id: uuidv4(), description: entry };
     setItinerary((prev) => ({
       ...prev,
-      [date]: [...prev[date], entry],
+      [date]: [...prev[date], newEntry],
     }));
+    try {
+        const auth = getAuth();
+        const idToken = await auth.currentUser?.getIdToken();
+    
+        const response = await fetch(`${apiUrl}/trip_itinerary/add-item`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${idToken}`,
+            },
+            body: JSON.stringify({
+                trip_id,
+                date,
+                description: entry,
+                item_id: newEntry.id,
+            }),
+        });
+    
+        if (!response.ok) {
+            throw new Error('Failed to add entry');
+        }
+        } catch (error) {
+        console.error('Error adding entry:', error)
+    }
   };
 
-  const deleteEntry = (date: string, index: number) => {
+  const deleteEntry = async (date: string, index: number) => {
     setItinerary((prev) => ({
       ...prev,
       [date]: prev[date].filter((_, i) => i !== index),
     }));
+    try {
+        const auth = getAuth();
+        const idToken = await auth.currentUser?.getIdToken();
+    
+        const response = await fetch(`${apiUrl}/trip_itinerary/delete-item`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${idToken}`,
+            },
+            body: JSON.stringify({
+                trip_id,
+                date,
+                index,
+            }),
+        });
+    
+        if (!response.ok) {
+            throw new Error('Failed to delete entry');
+        }
+        }
+        catch (error) {
+        console.error('Error deleting entry:', error);
+    }
   };
 
   const editEntry = (date: string, index: number, newEntry: string) => {
     setItinerary((prev) => ({
       ...prev,
-      [date]: prev[date].map((entry, i) => (i === index ? newEntry : entry)),
+      [date]: prev[date].map((entry, i) => (i === index ? { ...entry, description: newEntry } : entry)),
     }));
   };
+
+  const editConfirmation = async (date: string, description: string, id: string) => {
+    try {
+        const auth = getAuth();
+        const idToken = await auth.currentUser?.getIdToken();
+    
+        const response = await fetch(`${apiUrl}/trip_itinerary/update-item`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${idToken}`,
+            },
+            body: JSON.stringify({
+                trip_id,
+                date,
+                description,
+                item_id: id,
+            }),
+        });
+    
+        if (!response.ok) {
+            throw new Error('Failed to update entry');
+        }
+        } catch (error) {
+        console.error('Error updating entry:', error)
+    }
+  }
 
   const expandAll = () => {
     setExpandedDates((prev) =>
@@ -136,8 +214,9 @@ export function ViewItinerary() {
                   </Typography>
                   <TextField
                     variant="standard"
-                    value={entry}
+                    value={entry.description}
                     onChange={(e) => editEntry(date, index, e.target.value)}
+                    onBlur={() => editConfirmation(date, entry.description, entry.id)}
                     InputProps={{
                       disableUnderline: true,
                       style: { color: 'white' },
@@ -158,30 +237,37 @@ export function ViewItinerary() {
 }
 
 function AddEntryForm({ date, onAdd }: { date: string; onAdd: (date: string, entry: string) => void }) {
-  const [entry, setEntry] = useState('');
-
-  const handleAdd = () => {
-    if (entry.trim()) {
-      onAdd(date, entry);
-      setEntry('');
-    }
-  };
-
-  return (
-    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-      <TextField
-        label="Add an activity"
-        variant="outlined"
-        size="small"
-        value={entry}
-        onChange={(e) => setEntry(e.target.value)}
-        InputProps={{
-          style: { color: '#eeeeee' },
-        }}
-      />
-      <Button variant="contained" onClick={handleAdd}>
-        Add
-      </Button>
-    </Box>
-  );
-}
+    const [entry, setEntry] = useState('');
+    const maxLength = 500;
+  
+    const handleAdd = () => {
+      if (entry.trim()) {
+        onAdd(date, entry);
+        setEntry('');
+      }
+    };
+  
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      if (e.target.value.length <= maxLength) {
+        setEntry(e.target.value);
+      }
+    };
+  
+    return (
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        <TextField
+          label="Add an activity"
+          variant="outlined"
+          size="small"
+          value={entry}
+          onChange={handleChange}
+          InputProps={{
+            style: { color: '#eeeeee' },
+          }}
+        />
+        <Button variant="contained" onClick={handleAdd}>
+          Add
+        </Button>
+      </Box>
+    );
+  }

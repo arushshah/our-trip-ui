@@ -74,11 +74,11 @@ export function AllUserTripsView() {
     >
     <DashboardContent maxWidth="xl">
       <Typography variant="h4" sx={{ mb: { xs: 3, md: 5 } }}>
-        Hi, Welcome back {localStorage.getItem('first_name')}
+        Hi, welcome back {localStorage.getItem('first_name')}!
       </Typography>
       
       <Typography variant="h3" sx={{ mb: 2 }}>
-        Here are your upcoming trips
+        {userTrips.length === 0 ? 'You have no upcoming trips' : 'Here are your upcoming trips'}
       </Typography>
 
       <Grid container spacing={3}>

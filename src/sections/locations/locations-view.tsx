@@ -7,6 +7,7 @@ import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
 
+// default unassigned category is not showing up fix it
 export default function LocationsView() {
   const { trip_id = '' } = useParams<{ trip_id: string }>();
   const [expanded, setExpanded] = useState<{ [key: string]: boolean }>({});
@@ -201,6 +202,10 @@ export default function LocationsView() {
     };
   }, []);
 
+  useEffect(() => {
+    console.log(newCategoryName);
+  }, [newCategoryName]);
+
   const handleLocationConfirmation = async () => {
   
     const newLocationData = {
@@ -346,6 +351,7 @@ export default function LocationsView() {
 
   const handleCreateCategory = async () => {
     try {
+      console.log(newCategoryName);
       await fetch(`${apiUrl}/trip_locations/add-category`, {
         method: 'POST',
         headers: {
@@ -411,6 +417,7 @@ export default function LocationsView() {
             InputProps={{
               style: { color: '#EEEEEE' },
             }}
+            onChange={(e) => setNewCategoryName(e.target.value)}
           />
           <Fab
             variant="extended"

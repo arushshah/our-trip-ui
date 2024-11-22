@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Box, Typography, TextField, Button } from '@mui/material';
-import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { useParams, useLocation } from 'react-router-dom';
 import BackButtonView from 'src/layouts/components/back-button';
 import GuestView from 'src/sections/guests/view/guest-view';
 import {apiUrl} from 'src/config';
@@ -15,7 +15,6 @@ interface Trip {
 export function UpdateTripView() {
   const { trip_id } = useParams<{ trip_id: string }>();
   const location = useLocation();
-  const navigate = useNavigate();
   const [trip, setTrip] = useState<Trip>({
     trip_name: location.state?.title || '',
     trip_description: location.state?.trip_description || '',

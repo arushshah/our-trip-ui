@@ -24,6 +24,7 @@ export function AuthProvider({children}: AuthProviderProps) {
 
   const signOut = useCallback(async () => {
     await firebaseSignOut(auth);
+    localStorage.clear()
     setUser(null);
   }, []);
 
