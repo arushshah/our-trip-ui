@@ -98,8 +98,16 @@ export function ViewTripView() {
   };
 
   const formatDate = (dateString: string) => {
+    
+    // Parse the mm/dd/yyyy date string
+    const [month, day, year] = dateString.split('/').map(Number);
+    const date = new Date(year, month - 1, day); // Create a Date object
+  
+    // Define options for formatting the date
     const options: Intl.DateTimeFormatOptions = { year: 'numeric', month: 'long', day: 'numeric' };
-    return new Date(dateString).toLocaleDateString(undefined, options);
+    
+    // Format the date to "Month Day, Year"
+    return date.toLocaleDateString(undefined, options);
   };
 
   const handleChange = (event: SelectChangeEvent) => {

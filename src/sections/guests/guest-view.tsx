@@ -55,6 +55,7 @@ export default function GuestView({ trip_id, show_invited_guests }: GuestViewPro
       }
       setGuests(data.guests);
       setLoading(false);
+      console.log(data.guests);
     } catch (error) {
       console.error('Error fetching trip details:', error);
       setLoading(false);
@@ -66,12 +67,13 @@ export default function GuestView({ trip_id, show_invited_guests }: GuestViewPro
   }, [fetchTripDetails]);
 
   const handleDelete = async (guest_username: string) => {
+    console.log(guest_username);
     try {
       await axios.delete(`${apiUrl}/trip_guests/delete-trip-guest`, {
         headers: {
           Authorization: `Bearer ${idToken}`,
         },
-        data: { trip_guest_username: guest_username, trip_id }
+        data: { to_delete_username: guest_username, trip_id }
       });
       setOpenDialog(false); // Close the dialog after deletion
       fetchTripDetails();
@@ -81,6 +83,7 @@ export default function GuestView({ trip_id, show_invited_guests }: GuestViewPro
   };
 
   const handleOpenDialog = (guest_username: string) => {
+    console.log(guest_username);
     setGuestToDelete(guest_username);
     setOpenDialog(true);
   };

@@ -56,9 +56,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = React.memo(({ children 
       if (isProcessingRef.current) {
         return;
       }
-      console.log("FIREBASE USER AUTH STATE CHANGED")
       if (firebase_user) {
-        console.log("FIREBASE USER EXISTS")
         isProcessingRef.current = true;
         try {
           const token = await firebase_user.getIdToken();
@@ -67,13 +65,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = React.memo(({ children 
           const decodedToken: any = jwtDecode(token);
 
           if (decodedToken.exp < currentTime) {
-            console.log("SIGNING OUT LINE 43");
             signOut();
             navigate('/sign-in')
             return;
           }
-
-          console.log("CALLING VALIDATE USER")
           const response = await fetch(`${apiUrl}/users/validate-user`, {
             method: 'POST',
             headers: {

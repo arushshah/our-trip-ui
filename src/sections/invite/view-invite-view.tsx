@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Box, Typography, Button, FormControl, InputLabel, Select, MenuItem, SelectChangeEvent } from '@mui/material';
 import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
-import GuestView from 'src/sections/guests/view/guest-view';
+import GuestView from 'src/sections/guests/guest-view';
 import BackButtonView from 'src/layouts/components/back-button';
 import {apiUrl} from 'src/config';
 import { useAuth } from 'src/context/AuthContext';

@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Box, Typography, TextField, Button } from '@mui/material';
-import { useParams, useLocation } from 'react-router-dom';
+import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import BackButtonView from 'src/layouts/components/back-button';
-import GuestView from 'src/sections/guests/view/guest-view';
+import GuestView from 'src/sections/guests/guest-view';
 import {apiUrl} from 'src/config';
 import { useAuth } from 'src/context/AuthContext';
 
@@ -11,6 +11,7 @@ interface Trip {
   trip_description: string;
   trip_start_date: string;
   trip_end_date: string;
+  trip_host: string;
 }
 
 export function UpdateTripView() {
@@ -21,8 +22,21 @@ export function UpdateTripView() {
     trip_description: location.state?.trip_description || '',
     trip_start_date: location.state?.trip_start_date || '',
     trip_end_date: location.state?.trip_end_date || '',
+    trip_host: location.state?.trip_host || '',
   });
-  const {idToken} = useAuth();
+  const startDateRef = useRef<HTMLInputElement>(null);
+  const endDateRef = useRef<HTMLInputElement>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const navigate = useNavigate();
+  const { idToken } = useAuth();
+
+  const formatToMDYYYY = (dateString: string) => {
+    const date = new Date(dateString);
+    const month = String(date.getUTCMonth() + 1).padStart(2, '0'); // Use getUTCMonth
+    const day = String(date.getUTCDate()).padStart(2, '0'); // Use getUTCDate
+    const year = date.getUTCFullYear(); // Use getUTCFullYear
+    return `${month}/${day}/${year}`;
+  };
 
   useEffect(() => {
     const fetchTripDetails = async () => {
@@ -50,11 +64,12 @@ export function UpdateTripView() {
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const formattedStartDate = new Date(trip.trip_start_date).toLocaleDateString();
-    const formattedEndDate = new Date(trip.trip_end_date).toLocaleDateString();
+
+    if (errorMessage) {
+      return;
+    }
 
     try {
-
       const response = await fetch(`${apiUrl}/trips/update-trip`, {
         method: 'PUT',
         headers: {
@@ -65,13 +80,15 @@ export function UpdateTripView() {
           trip_id,
           trip_name: trip.trip_name,
           trip_description: trip.trip_description,
-          trip_start_date: formattedStartDate,
-          trip_end_date: formattedEndDate,
+          trip_start_date: formatToMDYYYY(trip.trip_start_date),
+          trip_end_date: formatToMDYYYY(trip.trip_end_date),
         }),
       });
 
       if (response.ok) {
         console.info("Updated trip successfully");
+        navigate('/home');
+        
       } else {
         console.error('Failed to update trip');
       }
@@ -79,18 +96,38 @@ export function UpdateTripView() {
       console.error('Error updating trip:', error);
     }
   };
+  
+
 
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
-    setTrip((prevTrip) => ({ ...prevTrip, [name]: value }));
+
+    let formattedValue = value;
+
+    if (name === 'trip_start_date' || name === 'trip_end_date') {
+      formattedValue = formatToMDYYYY(value);
+    }
+
+    setTrip((prevTrip) => ({ ...prevTrip, [name]: formattedValue }));
+
+    if (name === 'trip_start_date' || name === 'trip_end_date') {
+      const startDate = new Date(name === 'trip_start_date' ? value : trip.trip_start_date);
+      const endDate = new Date(name === 'trip_end_date' ? value : trip.trip_end_date);
+
+      if (endDate < startDate) {
+        setErrorMessage('End date cannot be before start date.');
+      } else {
+        setErrorMessage(null);
+      }
+    }
   };
 
   const formatDate = (dateString: string) => {
     if (!dateString) return '';
     const date = new Date(dateString);
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
+    const year = date.getUTCFullYear();
+    const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(date.getUTCDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
   };
 
@@ -144,6 +181,9 @@ export function UpdateTripView() {
           InputProps={{
             style: { color: '#EEEEEE' },
           }}
+          inputRef={startDateRef}
+          onFocus={() => startDateRef.current?.showPicker()}
+
         />
         <TextField
           fullWidth
@@ -158,7 +198,15 @@ export function UpdateTripView() {
           InputProps={{
             style: { color: '#EEEEEE' },
           }}
+          inputRef={endDateRef}
+          onFocus={() => endDateRef.current?.showPicker()}
+
         />
+        {errorMessage && (
+        <Typography color="error" sx={{ mb: 2 }}>
+          {errorMessage}
+        </Typography>
+        )}
         <GuestView trip_id={trip_id || ''} />
         <Button type="submit" variant="contained" color="primary">
           Update Trip

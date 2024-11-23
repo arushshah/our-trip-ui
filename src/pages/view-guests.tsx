@@ -2,7 +2,7 @@ import { Helmet } from 'react-helmet-async';
 import { useParams } from 'react-router-dom';
 
 import { CONFIG } from 'src/config-global';
-import GuestView from 'src/sections/guests/view/guest-view';
+import GuestView from 'src/sections/guests/guest-view';
 
 // ----------------------------------------------------------------------
 

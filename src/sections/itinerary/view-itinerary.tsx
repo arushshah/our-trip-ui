@@ -4,22 +4,26 @@ import { Box, Typography, Button, TextField, Collapse, IconButton } from '@mui/m
 import { apiUrl } from 'src/config';
 import { getAuth } from 'firebase/auth';
 import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc'; // Import the UTC plugin
+
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { v4 as uuidv4 } from 'uuid';
+import { useAuth } from 'src/context/AuthContext';
 
 export function ViewItinerary() {
   const { trip_id = '' } = useParams<{ trip_id: string }>();
 
   const [itinerary, setItinerary] = useState<Record<string, {id: string; description: string}[]>>({});
   const [expandedDates, setExpandedDates] = useState<Record<string, boolean>>({});
+  const {idToken} = useAuth();
+  dayjs.extend(utc); // Extend dayjs with the UTC plugin
 
   useEffect(() => {
     const fetchCurrentItinerary = async () => {
       try {
         const auth = getAuth();
-        const idToken = await auth.currentUser?.getIdToken();
 
         const response = await fetch(`${apiUrl}/trip_itinerary/get-itinerary?trip_id=${trip_id}`, {
           headers: {
@@ -28,7 +32,6 @@ export function ViewItinerary() {
         });
 
         const data = await response.json();
-        console.log(data);
 
         const tempItinerary: Record<string, {id: string; description: string}[]> = {};
         const tempExpandedDates: Record<string, boolean> = {};
@@ -52,7 +55,7 @@ export function ViewItinerary() {
     };
 
     fetchCurrentItinerary();
-  }, [trip_id]);
+  }, [trip_id, idToken]);
 
   const toggleExpand = (date: string) => {
     setExpandedDates((prev) => ({
@@ -69,7 +72,6 @@ export function ViewItinerary() {
     }));
     try {
         const auth = getAuth();
-        const idToken = await auth.currentUser?.getIdToken();
     
         const response = await fetch(`${apiUrl}/trip_itinerary/add-item`, {
             method: 'POST',
@@ -100,7 +102,6 @@ export function ViewItinerary() {
     }));
     try {
         const auth = getAuth();
-        const idToken = await auth.currentUser?.getIdToken();
     
         const response = await fetch(`${apiUrl}/trip_itinerary/delete-item`, {
             method: 'DELETE',
@@ -134,7 +135,6 @@ export function ViewItinerary() {
   const editConfirmation = async (date: string, description: string, id: string) => {
     try {
         const auth = getAuth();
-        const idToken = await auth.currentUser?.getIdToken();
     
         const response = await fetch(`${apiUrl}/trip_itinerary/update-item`, {
             method: 'PUT',
@@ -189,7 +189,7 @@ export function ViewItinerary() {
         <Box key={date} sx={{ mb: 3 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }} onClick={() => toggleExpand(date)}>
             <Typography variant="h4" sx={{ mr: 1 }}>
-              {dayjs(date).format('dddd, MMMM D, YYYY')}
+              {dayjs(date).utc().format('dddd, MMMM D, YYYY')}
             </Typography>
             <IconButton>
               {expandedDates[date] ? <ExpandLessIcon /> : <ExpandMoreIcon />}

@@ -15,6 +15,24 @@ export function CreateTripView() {
   const endDateRef = useRef<HTMLInputElement>(null);
   const {idToken} = useAuth();
 
+  const formatDate = (date: string) => {
+    const d = new Date(date);
+    
+    // Use UTC methods to avoid local timezone adjustments
+    const month = d.getUTCMonth() + 1;  // getUTCMonth() is zero-based, so we add 1
+    const day = d.getUTCDate();
+    const year = d.getUTCFullYear();
+  
+    console.log(month);
+    console.log(day);
+    console.log(year);
+
+    console.log(`${month.toString().padStart(2, '0')}/${day.toString().padStart(2, '0')}/${year}`)
+    
+    // Format the date as mm/dd/yyyy
+    return `${month.toString().padStart(2, '0')}/${day.toString().padStart(2, '0')}/${year}`;
+  };
+
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
@@ -22,7 +40,8 @@ export function CreateTripView() {
       if (!idToken) {
         throw new Error('No access token found');
       }
-
+      console.log(startDate);
+      console.log(endDate);
       const response = await fetch(`${apiUrl}/trips/create-trip`, {
         method: 'POST',
         headers: {
@@ -32,8 +51,8 @@ export function CreateTripView() {
         body: JSON.stringify({
           trip_name: tripName,
           trip_description: tripDescription,
-          trip_start_date: startDate,
-          trip_end_date: endDate
+          trip_start_date: formatDate(startDate),
+          trip_end_date: formatDate(endDate)
         }),
       });
 
