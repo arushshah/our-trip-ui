@@ -17,6 +17,7 @@ import {
   CircularProgress
 } from '@mui/material';
 import { apiUrl } from 'src/config';
+import { useAuth } from 'src/context/AuthContext';
 
 interface Guest {
   guest_username: string;
@@ -36,16 +37,16 @@ export default function GuestView({ trip_id, show_invited_guests }: GuestViewPro
   const [loading, setLoading] = useState<boolean>(true);
   const [openDialog, setOpenDialog] = useState<boolean>(false);
   const [guestToDelete, setGuestToDelete] = useState<string | null>(null);
+  const {idToken} = useAuth();
 
   const fetchTripDetails = useCallback(async () => {
     try {
-      const token = localStorage.getItem('idToken');
-      if (!token) {
+      if (!idToken) {
         throw new Error('No access token found');
       }
       const response = await fetch(`${apiUrl}/trip_guests/get-trip-guests?trip_id=${trip_id}`, {
         headers: {
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${idToken}`,
         },
       });
       const data = await response.json();
@@ -58,7 +59,7 @@ export default function GuestView({ trip_id, show_invited_guests }: GuestViewPro
       console.error('Error fetching trip details:', error);
       setLoading(false);
     }
-  }, [trip_id, show_invited_guests]);
+  }, [trip_id, show_invited_guests, idToken]);
 
   useEffect(() => {
     fetchTripDetails();
@@ -68,7 +69,7 @@ export default function GuestView({ trip_id, show_invited_guests }: GuestViewPro
     try {
       await axios.delete(`${apiUrl}/trip_guests/delete-trip-guest`, {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem('idToken')}`,
+          Authorization: `Bearer ${idToken}`,
         },
         data: { trip_guest_username: guest_username, trip_id }
       });

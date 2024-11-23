@@ -9,11 +9,9 @@ import MenuList from '@mui/material/MenuList';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 import MenuItem, { menuItemClasses } from '@mui/material/MenuItem';
-import { auth } from 'src/firebaseConfig';
 import { useRouter, usePathname } from 'src/routes/hooks';
 import { _myAccount } from 'src/_mock';
 import { useAuth } from 'src/context/AuthContext';
-import { signOut as firebaseSignOut } from 'firebase/auth';
 
 export type AccountPopoverProps = IconButtonProps & {
   data?: {
@@ -25,7 +23,7 @@ export type AccountPopoverProps = IconButtonProps & {
 };
 
 export function AccountPopover({ data = [], sx, ...other }: AccountPopoverProps) {
-  const { signOut } = useAuth();
+  const { user, signOut } = useAuth();
   const router = useRouter();
 
   const pathname = usePathname();
@@ -90,7 +88,7 @@ export function AccountPopover({ data = [], sx, ...other }: AccountPopoverProps)
       >
         <Box sx={{ p: 2, pb: 1.5 }}>
           <Typography variant="subtitle2" noWrap>
-            {localStorage.getItem('first_name')} {localStorage.getItem('last_name')}
+            {user?.firstName} {user?.lastName}
           </Typography>
 
         </Box>

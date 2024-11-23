@@ -3,6 +3,7 @@ import {apiUrl} from 'src/config';
 import { Box, Typography, TextField, Button, FormControl, InputLabel, Select, MenuItem, SelectChangeEvent, InputAdornment, DialogActions, Dialog, DialogContent, DialogContentText, DialogTitle, RadioGroup, FormControlLabel, Radio } from '@mui/material';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { jwtDecode } from 'jwt-decode';
+import { useAuth } from 'src/context/AuthContext';
 
 interface Trip {
   trip_name: string;
@@ -39,6 +40,7 @@ export function ViewTripView() {
   const [openLeaveDialog, setOpenLeaveDialog] = useState(false);
   const [openNewHostDialog, setOpenNewHostDialog] = useState(false);
   const [selectedNewHost, setSelectedNewHost] = useState('');
+  const {idToken} = useAuth();
   
   const handleOpenDeleteDialog = () => {
     setOpenDeleteDialog(true);
@@ -80,7 +82,7 @@ export function ViewTripView() {
       await fetch(`${apiUrl}/trip_guests/set-new-host`, {
         method: 'PUT',
         headers: {
-          Authorization: `Bearer ${localStorage.getItem('idToken')}`,
+          Authorization: `Bearer ${idToken}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -108,7 +110,7 @@ export function ViewTripView() {
         const response = await fetch(`${apiUrl}/trip_guests/update-rsvp-status`, {
           method: 'PUT',
           headers: {
-            Authorization: `Bearer ${localStorage.getItem('idToken')}`,
+            Authorization: `Bearer ${idToken}`,
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
@@ -133,7 +135,7 @@ export function ViewTripView() {
       try {
         const response = await fetch(`${apiUrl}/trips/get-trip?trip_id=${trip_id}`, {
           headers: {
-            Authorization: `Bearer ${localStorage.getItem('idToken')}`,
+            Authorization: `Bearer ${idToken}`,
           },
         });
         const data = await response.json();
@@ -151,16 +153,15 @@ export function ViewTripView() {
     };
     const fetchGuestList = async () => {
       try {
-        const token = localStorage.getItem('idToken');
-        if (!token) {
+        if (!idToken) {
           throw new Error('No access token found');
         }
         const response = await fetch(`${apiUrl}/trip_guests/get-trip-guests?trip_id=${trip_id}`, {
           headers: {
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${idToken}`,
           },
         });
-        const decoded_token = jwtDecode<{ user_id: string }>(token);
+        const decoded_token = jwtDecode<{ user_id: string }>(idToken);
         const data = await response.json();
         data.guests = data.guests.filter((guest: Guest) => guest.rsvp_status === 'YES');
         setGuests(data.guests);
@@ -172,7 +173,7 @@ export function ViewTripView() {
 
     fetchTripDetails();
     fetchGuestList();
-  }, [trip_id]);
+  }, [trip_id, idToken]);
 
   const handleEditClick = () => {
     navigate(`/update-trip/${trip_id}`, {
@@ -190,7 +191,7 @@ export function ViewTripView() {
       await fetch(`${apiUrl}/trips/delete-trip`, {
         method: 'DELETE',
         headers: {
-          Authorization: `Bearer ${localStorage.getItem('idToken')}`,
+          Authorization: `Bearer ${idToken}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -208,7 +209,7 @@ export function ViewTripView() {
       await fetch(`${apiUrl}/trip_guests/delete-trip-guest`, {
         method: 'DELETE',
         headers: {
-          Authorization: `Bearer ${localStorage.getItem('idToken')}`,
+          Authorization: `Bearer ${idToken}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({

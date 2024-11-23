@@ -6,6 +6,7 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
+import { useAuth } from 'src/context/AuthContext';
 
 // default unassigned category is not showing up fix it
 export default function LocationsView() {
@@ -24,6 +25,7 @@ export default function LocationsView() {
   const [selectedPlaceCategory, setSelectedPlaceCategory] = useState('');  // For category selection
   const [isEditing, setIsEditing] = useState(false);  // Flag to indicate if we are editing an existing place
   const [errorMessage, setErrorMessage] = useState<string>('');
+  const {idToken} = useAuth();
   
   const handleEditPlace = useCallback(
     (place: { name: string; lat: number; lng: number; place_id: string, category: string }) => {
@@ -41,7 +43,7 @@ export default function LocationsView() {
     try {
       const response = await fetch(`${apiUrl}/trip_locations/get-locations?trip_id=${trip_id}`, {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem('idToken')}`, // Assuming you're using a token for authorization
+          Authorization: `Bearer ${idToken}`, // Assuming you're using a token for authorization
         },
       });
 
@@ -102,7 +104,7 @@ export default function LocationsView() {
     finally {
       setSelectedPlaceCategory(''); // Reset selected categories
     }
-  }, [map, trip_id, handleEditPlace]);
+  }, [map, trip_id, handleEditPlace, idToken]);
   
   useEffect(() => {
     const loadScript = () => {
@@ -224,7 +226,7 @@ export default function LocationsView() {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${localStorage.getItem('idToken')}`,  // Assuming you're using a token for authorization
+            Authorization: `Bearer ${idToken}`,  // Assuming you're using a token for authorization
           },
           body: JSON.stringify({...newLocationData, trip_id}),
         });
@@ -265,7 +267,7 @@ export default function LocationsView() {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${localStorage.getItem('idToken')}`,  // Assuming you're using a token for authorization
+            Authorization: `Bearer ${idToken}`,  // Assuming you're using a token for authorization
           },
           body: JSON.stringify({ ...newLocationData, trip_id }),
         });
@@ -298,7 +300,7 @@ export default function LocationsView() {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('idToken')}`,  // Assuming you're using a token for authorization
+          Authorization: `Bearer ${idToken}`,  // Assuming you're using a token for authorization
         },
         body: JSON.stringify({ place_id: selectedPlaceDetails.place_id, trip_id }),
       });
@@ -356,7 +358,7 @@ export default function LocationsView() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('idToken')}`,  // Assuming you're using a token for authorization
+          Authorization: `Bearer ${idToken}`,  // Assuming you're using a token for authorization
         },
         body: JSON.stringify({category: newCategoryName, trip_id}),
       });
@@ -373,7 +375,7 @@ export default function LocationsView() {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${localStorage.getItem('idToken')}`,  // Assuming you're using a token for authorization
+        Authorization: `Bearer ${idToken}`,  // Assuming you're using a token for authorization
       },
       body: JSON.stringify({category, trip_id}),
     })

@@ -4,6 +4,7 @@ import { Box, Typography, Button, TextField, Snackbar, Alert } from '@mui/materi
 import BackButtonView from 'src/layouts/components/back-button';
 import { useParams } from 'react-router-dom';
 import {apiUrl} from 'src/config';
+import { useAuth } from 'src/context/AuthContext';
 
 const CreateAccommodationView: React.FC = () => {
   const { trip_id } = useParams<{ trip_id: string }>();
@@ -12,6 +13,7 @@ const CreateAccommodationView: React.FC = () => {
   const [presignedUrl, setPresignedUrl] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const {idToken} = useAuth();
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files[0]) {
@@ -40,7 +42,7 @@ const CreateAccommodationView: React.FC = () => {
         },
         {
           headers: {
-            Authorization: `Bearer ${localStorage.getItem('idToken')}`,
+            Authorization: `Bearer ${idToken}`,
           },
         }
       );

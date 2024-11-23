@@ -4,6 +4,7 @@ import { Box, Typography, Button, TextField, Snackbar, Alert } from '@mui/materi
 import BackButtonView from 'src/layouts/components/back-button';
 import { useParams } from 'react-router-dom';
 import {apiUrl} from 'src/config';
+import { useAuth } from 'src/context/AuthContext';
 
 const ALLOWED_FILE_TYPES = [
   'application/msword',
@@ -28,6 +29,7 @@ const CreateTravelDocView: React.FC = () => {
   const [presignedUrl, setPresignedUrl] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const {idToken} = useAuth();
   
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const newFile = event.target.files?.[0];
@@ -66,7 +68,7 @@ const CreateTravelDocView: React.FC = () => {
             },
             {
                 headers: {
-                    Authorization: `Bearer ${localStorage.getItem('idToken')}`,
+                    Authorization: `Bearer ${idToken}`,
                 },
             }
         );

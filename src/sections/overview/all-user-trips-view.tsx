@@ -6,8 +6,9 @@ import {apiUrl} from 'src/config';
 import { _tasks, _posts, _timeline } from 'src/_mock';
 import { DashboardContent } from 'src/layouts/dashboard';
 import { getAuth } from 'firebase/auth';
+import { useAuth } from 'src/context/AuthContext';
 import { UserTripEntry } from './user-trip-entry';
-import { CreateTripEntry } from '../trip/create-trip-entry';
+
 
 interface UserTrip {
   trip_name: string;
@@ -21,7 +22,7 @@ interface UserTrip {
 export function AllUserTripsView() {
 
   const [userTrips, setUserTrips] = useState<UserTrip[]>([]);
-  const [userId, setUserId] = useState<string>('');
+  const {idToken, user} = useAuth();
 
   useEffect(() => {
 
@@ -29,7 +30,6 @@ export function AllUserTripsView() {
       try {
 
         const auth = getAuth();
-        const idToken = await auth.currentUser?.getIdToken();
         
         const response = await fetch(`${apiUrl}/trips/get-user-trips`, {
           headers: {
@@ -61,7 +61,7 @@ export function AllUserTripsView() {
       }
     };
     fetchUserTrips();
-  }, [userId]);
+  }, [idToken]);
   
   return (
     <Box
@@ -74,7 +74,7 @@ export function AllUserTripsView() {
     >
     <DashboardContent maxWidth="xl">
       <Typography variant="h4" sx={{ mb: { xs: 3, md: 5 } }}>
-        Hi, welcome back {localStorage.getItem('first_name')}!
+        Hi, welcome back {user?.firstName}!
       </Typography>
       
       <Typography variant="h3" sx={{ mb: 2 }}>

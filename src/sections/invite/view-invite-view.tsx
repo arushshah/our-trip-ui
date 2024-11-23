@@ -4,6 +4,7 @@ import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
 import GuestView from 'src/sections/guests/view/guest-view';
 import BackButtonView from 'src/layouts/components/back-button';
 import {apiUrl} from 'src/config';
+import { useAuth } from 'src/context/AuthContext';
 
 interface Guest {
   guest_username: string;
@@ -32,6 +33,7 @@ export function ViewInviteView() {
   });
   const [guests, setGuests] = useState<Guest[]>([]);
   const [rsvpResponse, setRsvpResponse] = React.useState('INVITED');
+  const {idToken} = useAuth();
 
   const handleChange = (event: SelectChangeEvent) => {
     setRsvpResponse(event.target.value as string);
@@ -41,7 +43,7 @@ export function ViewInviteView() {
         const response = await fetch(`${apiUrl}/trip_guests/update-rsvp-status`, {
           method: 'PUT',
           headers: {
-            Authorization: `Bearer ${localStorage.getItem('idToken')}`,
+            Authorization: `Bearer ${idToken}`,
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
@@ -66,7 +68,7 @@ export function ViewInviteView() {
       try {
         const response = await fetch(`${apiUrl}/trips/get-trip?trip_id=${trip_id}`, {
           headers: {
-            Authorization: `Bearer ${localStorage.getItem('idToken')}`,
+            Authorization: `Bearer ${idToken}`,
           },
         });
         const data = await response.json();
@@ -82,14 +84,14 @@ export function ViewInviteView() {
       }
     };
     fetchTripDetails();
-  }, [trip_id]);
+  }, [trip_id, idToken]);
 
   useEffect(() => {
     const fetchTripDetails = async () => {
       try {
         const response = await fetch(`${apiUrl}/trip_guests/get-trip-guests?trip_id=${trip_id}`, {
           headers: {
-            Authorization: `Bearer ${localStorage.getItem('idToken')}`,
+            Authorization: `Bearer ${idToken}`,
           },
         });
         const data = await response.json();
@@ -99,7 +101,7 @@ export function ViewInviteView() {
       }
     };
     fetchTripDetails();
-  }, [trip_id]);
+  }, [trip_id, idToken]);
 
   if (!trip) {
     return <Typography>Loading...</Typography>;

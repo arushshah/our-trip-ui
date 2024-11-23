@@ -8,8 +8,6 @@ import { varAlpha } from 'src/theme/styles';
 import { AuthLayout } from 'src/layouts/auth';
 import { DashboardLayout } from 'src/layouts/dashboard';
 import ProtectedRoute from 'src/routes/components/ProtectedRoute'; // Import the ProtectedRoute component
-import { AuthProvider } from 'src/context/AuthContext'; // Import the AuthProvider
-import { ViewItinerary } from '../sections/itinerary/view-itinerary';
 
 // ----------------------------------------------------------------------
 
@@ -54,7 +52,6 @@ export function Router() {
   return useRoutes([
     {
       element: (
-        <AuthProvider>
           <ProtectedRoute>
             <DashboardLayout>
               <Suspense fallback={renderFallback}>
@@ -62,7 +59,6 @@ export function Router() {
               </Suspense>
             </DashboardLayout>
           </ProtectedRoute>
-        </AuthProvider>
       ),
       // Add routes here
       children: [
@@ -91,25 +87,25 @@ export function Router() {
     {
       path: 'sign-in',
       element: (
-        <AuthProvider>
+        
           <AuthLayout>
             <Suspense fallback={renderFallback}>
               <SignInPage />
             </Suspense>
           </AuthLayout>
-        </AuthProvider>
+        
       ),
     },
     {
       path: 'create-account',
       element: (
-        <AuthProvider>
+        
           <AuthLayout>
             <Suspense fallback={renderFallback}>
               <CreateAccountPage />
             </Suspense>
           </AuthLayout>
-        </AuthProvider>
+        
       ),
     },
     {

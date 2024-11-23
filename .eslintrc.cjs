@@ -25,6 +25,7 @@ module.exports = {
    * 2 ~ 'error'
    */
   rules: {
+    "react/prop-types": "off",
     // general
     'no-alert': 0,
     camelcase: 0,

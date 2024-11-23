@@ -4,10 +4,11 @@ import {
   DialogContent, DialogTitle, TextField, Checkbox, FormControlLabel, IconButton
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
+import { useAuth } from 'src/context/AuthContext';
 import {apiUrl} from 'src/config';
 import { useParams } from 'react-router-dom';
 import { getAuth } from 'firebase/auth';
-import ExpensesNavbar from './expenses-navbar';
+
 
 interface ExpenseItem {
   expenseId: string;
@@ -39,26 +40,27 @@ export function BalanceSheet() {
   const [newExpense, setNewExpense] = useState({ title: '', amount: 0 });
   const [error, setError] = useState('');
   const userId = getAuth().currentUser?.uid;
+  const { idToken } = useAuth();
 
 
   const fetchExpenses = useCallback(async () => {
     try {
       const response = await fetch(`${apiUrl}/expenses/get-expenses?trip_id=${trip_id}`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('idToken')}` },
+        headers: { Authorization: `Bearer ${idToken}` },
       });
       const data = await response.json();
       setExpenses(data.expenses);
     } catch (e) {
       console.error('Error fetching expenses:', e);
     }
-  }, [trip_id]);
+  }, [trip_id, idToken]);
 
   useEffect(() => {
 
     const fetchTripUsers = async () => {
       try {
         const response = await fetch(`${apiUrl}/trip_guests/get-trip-guests?trip_id=${trip_id}`, {
-          headers: { Authorization: `Bearer ${localStorage.getItem('idToken')}` },
+          headers: { Authorization: `Bearer ${idToken}` },
         });
         const data = await response.json();
         setTripUsers(data.guests);
@@ -68,7 +70,7 @@ export function BalanceSheet() {
     };
     fetchExpenses();
     fetchTripUsers();
-  }, [trip_id, fetchExpenses]);
+  }, [trip_id, fetchExpenses, idToken]);
 
 
   const handleOpenDialog = (expense?: ExpenseItem) => {
@@ -117,7 +119,7 @@ export function BalanceSheet() {
     try {
       await fetch(`${apiUrl}/expenses/add-expense`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('idToken')}` },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
         body: JSON.stringify({ ...expenseData, trip_id }),
       });
       setExpenses((prevExpenses) => [...prevExpenses, newExpenseItem]);
@@ -150,7 +152,7 @@ export function BalanceSheet() {
     try {
       await fetch(`${apiUrl}/expenses/update-expense`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('idToken')}` },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
         body: JSON.stringify(expenseData),
       });
       fetchExpenses();
@@ -166,7 +168,7 @@ export function BalanceSheet() {
       try {
         await fetch(`${apiUrl}/expenses/delete-expense`, {
           method: 'DELETE',
-          headers: { Authorization: `Bearer ${localStorage.getItem('idToken')}`, 'Content-Type': 'application/json' },
+          headers: { Authorization: `Bearer ${idToken}`, 'Content-Type': 'application/json' },
           body: JSON.stringify({ expense_id: currentExpense?.expenseId, trip_id }),
         });
         setExpenses((prev) => prev.filter((exp) => exp.expenseId !== currentExpense.expenseId));

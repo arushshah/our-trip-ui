@@ -5,8 +5,8 @@ import {apiUrl} from 'src/config';
 import { _tasks, _posts, _timeline } from 'src/_mock';
 import { DashboardContent } from 'src/layouts/dashboard';
 import { getAuth } from 'firebase/auth';
+import { useAuth } from 'src/context/AuthContext';
 import { UserTripEntry } from './user-trip-entry';
-
 
 
 interface UserTrip {
@@ -22,6 +22,7 @@ export function AllUserInvitesView() {
 
   const [userTrips, setUserTrips] = useState<UserTrip[]>([]);
   const [userId, setUserId] = useState<string>('');
+  const {idToken, user} = useAuth();
 
   useEffect(() => {
 
@@ -29,7 +30,6 @@ export function AllUserInvitesView() {
       try {
 
         const auth = getAuth();
-        const idToken = await auth.currentUser?.getIdToken();
         
         const response = await fetch(`${apiUrl}/trips/get-user-trips`, {
           headers: {
@@ -61,7 +61,7 @@ export function AllUserInvitesView() {
       }
     };
     fetchUserTrips();
-  }, [userId]);
+  }, [userId, idToken]);
   
   return (
     <Box
@@ -74,7 +74,7 @@ export function AllUserInvitesView() {
     >
     <DashboardContent maxWidth="xl">
       <Typography variant="h4" sx={{ mb: { xs: 3, md: 5 } }}>
-        Hi, Welcome back {localStorage.getItem('first_name')}
+        Hi, Welcome back {user?.firstName ?? 'Guest'}
       </Typography>
       
       <Typography variant="h3" sx={{ mb: 2 }}>

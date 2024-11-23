@@ -3,6 +3,7 @@ import { Box, Typography, TextField, Button, InputAdornment } from '@mui/materia
 import { useNavigate } from 'react-router-dom';
 import BackButtonView from 'src/layouts/components/back-button';
 import {apiUrl} from 'src/config';
+import { useAuth } from 'src/context/AuthContext';
 
 export function CreateTripView() {
   const navigate = useNavigate();
@@ -12,13 +13,13 @@ export function CreateTripView() {
   const [endDate, setEndDate] = useState('');
   const startDateRef = useRef<HTMLInputElement>(null);
   const endDateRef = useRef<HTMLInputElement>(null);
+  const {idToken} = useAuth();
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     try {
-      const token = localStorage.getItem('idToken');
-      if (!token) {
+      if (!idToken) {
         throw new Error('No access token found');
       }
 
@@ -26,7 +27,7 @@ export function CreateTripView() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
+          'Authorization': `Bearer ${idToken}`,
         },
         body: JSON.stringify({
           trip_name: tripName,

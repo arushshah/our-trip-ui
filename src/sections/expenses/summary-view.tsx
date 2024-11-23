@@ -4,6 +4,7 @@ import {
 } from '@mui/material';
 import { apiUrl } from 'src/config';
 import { useParams } from 'react-router-dom';
+import { useAuth } from 'src/context/AuthContext';
 
 interface ExpenseItem {
   expenseId: string;
@@ -33,30 +34,31 @@ export function SummaryView() {
   const [usersOweAmounts, setUsersOweAmounts] = useState<{ [key: string]: { [key: string]: number } }>({});
   const formatUserName = (user: TripUser) => `${user?.guest_first_name} ${user?.guest_last_name}`;
   const displayAmount = (amount: number) => `$${amount.toFixed(2)}`;
+  const {idToken} = useAuth();
 
   const fetchExpenses = useCallback(async () => {
     try {
       const response = await fetch(`${apiUrl}/expenses/get-expenses?trip_id=${trip_id}`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('idToken')}` },
+        headers: { Authorization: `Bearer ${idToken}` },
       });
       const data = await response.json();
       setExpenses(data.expenses);
     } catch (e) {
       console.error('Error fetching expenses:', e);
     }
-  }, [trip_id]);
+  }, [trip_id, idToken]);
 
   const fetchTripUsers = useCallback(async () => {
     try {
       const response = await fetch(`${apiUrl}/trip_guests/get-trip-guests?trip_id=${trip_id}`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('idToken')}` },
+        headers: { Authorization: `Bearer ${idToken}` },
       });
       const data = await response.json();
       setTripUsers(data.guests);
     } catch (e) {
       console.error('Error fetching trip users:', e);
     }
-  }, [trip_id]);
+  }, [trip_id, idToken]);
 
   useEffect(() => {
     fetchExpenses();

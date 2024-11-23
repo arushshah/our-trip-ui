@@ -7,6 +7,7 @@ import mammoth from 'mammoth';
 import * as XLSX from 'xlsx';
 import WordViewer from 'src/components/WordViewer';
 import ExcelViewer from 'src/components/ExcelViewer';
+import { useAuth } from 'src/context/AuthContext';
 
 interface TripTravelEntryProps {
   trip_id: string;
@@ -32,6 +33,7 @@ export function TripTravelEntry({
   const [lastModified, setLastModified] = useState<string | null>(null);
   const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
   const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null);
+  const {idToken} = useAuth();
 
   useEffect(() => {
     const fetchPresignedUrls = async () => {
@@ -46,7 +48,7 @@ export function TripTravelEntry({
               },
               {
                   headers: {
-                      Authorization: `Bearer ${localStorage.getItem('idToken')}`,
+                      Authorization: `Bearer ${idToken}`,
                   }
               }, 
           );
@@ -92,7 +94,7 @@ export function TripTravelEntry({
     };
 
     fetchPresignedUrls();
-  }, [file_name, trip_id]);
+  }, [file_name, trip_id, idToken]);
 
   const handleClick = () => {
     console.log(fileUrl);

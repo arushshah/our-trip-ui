@@ -105,7 +105,6 @@ export function SignInView() {
       if (user) {
         user.getIdToken().then((token) => {
           idTokenRef.current = token;
-          localStorage.setItem('idToken', token);
           navigate('/home');
         });
       }

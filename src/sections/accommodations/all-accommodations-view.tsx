@@ -5,6 +5,7 @@ import axios from 'axios';
 import { _tasks, _posts, _timeline } from 'src/_mock';
 import { apiUrl } from 'src/config';
 import { TripAccommodationEntry } from 'src/sections/accommodations/trip-accommodation-entry';
+import { useAuth } from 'src/context/AuthContext';
 
 interface FileObject {
   file_name: string;
@@ -12,14 +13,14 @@ interface FileObject {
 }
 
 export function AllAccommodationsView() {
+  const { user, signOut, idToken } = useAuth();
   const { trip_id } = useParams<{ trip_id: string }>();
   const [files, setFiles] = useState<FileObject[]>([]);
 
   useEffect(() => {
     const fetchUserTrips = async () => {
       try {
-        const token = localStorage.getItem('idToken');
-        if (!token) {
+        if (!idToken) {
           throw new Error('No access token found');
         }
         const params = new URLSearchParams({
@@ -28,7 +29,7 @@ export function AllAccommodationsView() {
         });
         const response = await fetch(`${apiUrl}/user_uploads/retrieve-trip-uploads?${params.toString()}`, {
             headers: {
-                Authorization: `Bearer ${token}`,
+                Authorization: `Bearer ${idToken}`,
             },
         });
         const data = await response.json();
@@ -40,7 +41,7 @@ export function AllAccommodationsView() {
       }
     };
     fetchUserTrips();
-  }, [trip_id]);
+  }, [trip_id, idToken]);
 
   const handleDelete = async (fileName: string) => {
     try {
@@ -51,7 +52,7 @@ export function AllAccommodationsView() {
         }, 
         {
             headers: {
-                Authorization: `Bearer ${localStorage.getItem('idToken')}`,
+                Authorization: `Bearer ${idToken}`,
             },
         });
       setFiles((prevFiles) => prevFiles.filter((file) => file.file_name !== fileName));

@@ -5,6 +5,7 @@ import { useParams } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
 import DeleteIcon from '@mui/icons-material/Delete';
 import {apiUrl} from 'src/config';
+import { useAuth } from 'src/context/AuthContext';
 
 interface TodoItem {
   text: string;
@@ -20,6 +21,7 @@ export function TodoListView() {
   const { trip_id = '' } = useParams<{ trip_id: string }>();
   const [todos, setTodos] = useState<TodoItem[]>(initialTodos);
   const [newTodo, setNewTodo] = useState('');
+  const {idToken} = useAuth();
 
   // make a call to the backend to get the list of todos
   useEffect(() => {
@@ -27,7 +29,7 @@ export function TodoListView() {
       try {
         const response = await fetch(`${apiUrl}/trips/get-todos?trip_id=${trip_id}`, {
           headers: {
-            Authorization: `Bearer ${localStorage.getItem('idToken')}`,
+            Authorization: `Bearer ${idToken}`,
           },
         });
         const data = await response.json();
@@ -38,7 +40,7 @@ export function TodoListView() {
     };
 
     fetchTodos();
-  }, [trip_id]);
+  }, [trip_id, idToken]);
 
   const handleToggle = (id: string, text: string) => {
     setTodos((prevTodos) =>
@@ -52,7 +54,7 @@ export function TodoListView() {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${localStorage.getItem('idToken')}`,
+            Authorization: `Bearer ${idToken}`,
           },
           body: JSON.stringify({ id, trip_id, text, checked: !todos.find((todo) => todo.id === id)?.checked }),
         });
@@ -81,7 +83,7 @@ export function TodoListView() {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${localStorage.getItem('idToken')}`,
+            Authorization: `Bearer ${idToken}`,
           },
           body: JSON.stringify({ id, trip_id, text: newText, checked: todos.find((todo) => todo.id === id)?.checked }),
         });
@@ -103,7 +105,7 @@ export function TodoListView() {
           method: 'DELETE',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${localStorage.getItem('idToken')}`,
+            Authorization: `Bearer ${idToken}`,
           },
           body: JSON.stringify({ id, trip_id }),
         });
@@ -133,7 +135,7 @@ export function TodoListView() {
         method: 'POST',
         headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${localStorage.getItem('idToken')}`,
+        Authorization: `Bearer ${idToken}`,
         },
         body: JSON.stringify({ ...newTodoItem, trip_id }),
       });

@@ -4,6 +4,7 @@ import { useParams, useLocation } from 'react-router-dom';
 import BackButtonView from 'src/layouts/components/back-button';
 import GuestView from 'src/sections/guests/view/guest-view';
 import {apiUrl} from 'src/config';
+import { useAuth } from 'src/context/AuthContext';
 
 interface Trip {
   trip_name: string;
@@ -21,13 +22,14 @@ export function UpdateTripView() {
     trip_start_date: location.state?.trip_start_date || '',
     trip_end_date: location.state?.trip_end_date || '',
   });
+  const {idToken} = useAuth();
 
   useEffect(() => {
     const fetchTripDetails = async () => {
       try {
         const response = await fetch(`${apiUrl}/trips/get-trip?trip_id=${trip_id}`, {
           headers: {
-            Authorization: `Bearer ${localStorage.getItem('idToken')}`,
+            Authorization: `Bearer ${idToken}`,
           },
         });
         const data = await response.json();
@@ -44,7 +46,7 @@ export function UpdateTripView() {
     };
 
     fetchTripDetails();
-  }, [trip_id]);
+  }, [trip_id, idToken]);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -57,7 +59,7 @@ export function UpdateTripView() {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('idToken')}`,
+          Authorization: `Bearer ${idToken}`,
         },
         body: JSON.stringify({
           trip_id,

@@ -2,12 +2,12 @@ import { useState, useEffect } from 'react';
 import Box from '@mui/material/Box';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
-import { Button } from '@mui/material';
+import { Button, CircularProgress } from '@mui/material';
 import { auth, RecaptchaVerifier } from 'src/firebaseConfig';
-import { useAuth } from 'src/context/AuthContext';
 import { signInWithPhoneNumber, ConfirmationResult } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
 import {apiUrl} from 'src/config';
+import { useAuth } from 'src/context/AuthContext';
 
 export function CreateAccountView() {
   const navigate = useNavigate();
@@ -19,6 +19,8 @@ export function CreateAccountView() {
   const [otp, setOtp] = useState('');
   const [otpSent, setOtpSent] = useState(false);
   const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
+  const {skipValidationRef, setSkipValidation} = useAuth();
+  const [isProcessing, setIsProcessing] = useState(false); 
 
   const validatePhoneNumber = (number: string) => {
     const phoneNumberPattern = /^\+?[1-9]\d{1,14}$/;
@@ -76,11 +78,13 @@ export function CreateAccountView() {
     }
 
     setLoading(true);
+    setIsProcessing(true);
 
     const appVerifier = window.recaptchaVerifier;
 
     if (!appVerifier) {
       setLoading(false);
+      setIsProcessing(false);
       setErrorMessage('reCAPTCHA has not been set up properly.');
       return;
     }
@@ -94,28 +98,32 @@ export function CreateAccountView() {
       setOtpSent(true);
       console.info('OTP sent');
     } catch (error) {
-      setLoading(false);
-      setErrorMessage('Failed to send OTP. Please try again.');
-      console.error('Error sending OTP:', error);
+        setLoading(false);
+        setIsProcessing(false);
+        setErrorMessage('Failed to send OTP. Please try again.');
+        console.error('Error sending OTP:', error);
     }
     finally {
       setLoading(false);
+      setIsProcessing(false);
     }
   };
 
   const handleVerifyOtp = async () => {
+    console.log("setting skip validation to true");
+    setSkipValidation(true);
     if (!confirmationResult) {
       setErrorMessage('No OTP sent');
       return;
     }
-    localStorage.setItem('userSetupStarted', 'true');
     setLoading(true);
+    setIsProcessing(true);
 
     try {
       const result = await confirmationResult.confirm(otp);
+      console.log("CAPTCHA CONFIRMED")
       const user = result.user;
       const idToken = await user.getIdToken();
-      localStorage.setItem('idToken', idToken);
       setLoading(false);
       console.info(user);
       console.info("Success login, ID Token:", idToken);
@@ -129,21 +137,41 @@ export function CreateAccountView() {
       });
       console.log("CREATED USER: ", createUserResponse);
       if (createUserResponse.status === 201) {
-        console.log("Created user in DB");
-        localStorage.removeItem('userSetupStarted');
+        console.log("Setting skip validation to false");
+        setSkipValidation(false)
+
+        const maxRetries = 10;
+        let retries = 0;
+
+        const waitForAuthValidation = new Promise<void>((resolve, reject) => {
+          const interval = setInterval(() => {
+            if (retries >= maxRetries) {
+              clearInterval(interval);
+              reject(new Error('Timeout waiting for Firebase auth validation'));
+            }
+
+            if (auth.currentUser && !skipValidationRef.current) {
+              clearInterval(interval);
+              resolve();
+            }
+            retries+=1;
+          }, 500);
+        });
+
+        await waitForAuthValidation;
         navigate('/home');
       }
       else {
         setErrorMessage('Failed to create user in the database.');
       }
     } catch (error) {
-      setLoading(false);
-      setErrorMessage('Invalid OTP. Please try again.');
-      console.error('Error verifying OTP:', error);
+        setLoading(false);
+        setErrorMessage('Invalid OTP. Please try again.');
+        console.error('Error verifying OTP:', error);
     }
     finally {
       setLoading(false);
-      localStorage.removeItem('userSetupStarted');
+      setIsProcessing(false);
     }
   };
 
@@ -151,7 +179,6 @@ export function CreateAccountView() {
     <Box>
       <Box gap={1.5} display="flex" flexDirection="column" alignItems="center" sx={{ mb: 5 }}>
         <Typography variant="h5">Create Account</Typography>
-        
       </Box>
 
       {errorMessage && (
@@ -162,111 +189,110 @@ export function CreateAccountView() {
 
       <Box display="flex" flexDirection="column" alignItems="flex-end">
         {!otpSent ? (
-            <>
-              <TextField
-                fullWidth
-                name="firstName"
-                label="First Name"
-                value={firstName}
-                onChange={(e) => setFirstName(e.target.value)}
-                InputLabelProps={{ shrink: true }}
-                sx={{ mb: 3 }}
-                />
-              <TextField
-                fullWidth
-                name="lastName"
-                label="Last Name"
-                value={lastName}
-                onChange={(e) => setLastName(e.target.value)}
-                InputLabelProps={{ shrink: true }}
-                sx={{ mb: 3 }}
-              />
-              <TextField
-                required
-                fullWidth
-                id="phoneNumber"
-                label="Phone Number"
-                value={phoneNumber}
-                onChange={handlePhoneNumberChange}
-                sx={{ mb: 3 }}
-                error={!!errorMessage}
-                helperText={errorMessage}
-              />
-              <Button
-                fullWidth
-                size="large"
-                type="submit"
-                color="inherit"
-                variant="contained"
-                onClick={handleSendOtp}
-              >
-                {loading ? 'Sending OTP...' : 'Send OTP'}
-              </Button>
-            </>
-          ) : (
-            <>
+          <>
             <TextField
-                fullWidth
-                name="firstName"
-                label="First Name"
-                value={firstName}
-                onChange={(e) => setFirstName(e.target.value)}
-                InputLabelProps={{ shrink: true }}
-                InputProps={{
-                  readOnly: true
-                }}
-                sx={{ mb: 3 }}
-                />
-              <TextField
-                fullWidth
-                name="lastName"
-                label="Last Name"
-                value={lastName}
-                onChange={(e) => setLastName(e.target.value)}
-                InputLabelProps={{ shrink: true }}
-                InputProps={{
-                  readOnly: true
-                }}
-                sx={{ mb: 3 }}
-              />
+              fullWidth
+              name="firstName"
+              label="First Name"
+              value={firstName}
+              onChange={(e) => setFirstName(e.target.value)}
+              InputLabelProps={{ shrink: true }}
+              sx={{ mb: 3 }}
+            />
             <TextField
-                required
-                fullWidth
-                id="phoneNumber"
-                label="Phone Number"
-                variant="standard"
-                value={phoneNumber}
-                InputProps={{
-                  readOnly: true
-                }}
-                sx={{ mb: 3 }}
-              />
-              <TextField
-                required
-                fullWidth
-                id="otp"
-                label="Enter Verification Code Sent to Your Phone"
-                variant="standard"
-                value={otp}
-                onChange={(e) => setOtp(e.target.value)}
-                sx={{ mt: 3, mb: 3 }}
-              />
-              <Button
-                fullWidth
-                size="large"
-                type="submit"
-                color="inherit"
-                variant="contained"
-                onClick={handleVerifyOtp}
-                disabled={loading}
-              >
-                {loading ? 'Verifying OTP...' : 'Verify OTP'}
-              </Button>
-            </>
-          )}
-          <div id="recaptcha-container" />
+              fullWidth
+              name="lastName"
+              label="Last Name"
+              value={lastName}
+              onChange={(e) => setLastName(e.target.value)}
+              InputLabelProps={{ shrink: true }}
+              sx={{ mb: 3 }}
+            />
+            <TextField
+              required
+              fullWidth
+              id="phoneNumber"
+              label="Phone Number"
+              value={phoneNumber}
+              onChange={handlePhoneNumberChange}
+              sx={{ mb: 3 }}
+              error={!!errorMessage}
+              helperText={errorMessage}
+            />
+            <Button
+              fullWidth
+              size="large"
+              type="submit"
+              color="inherit"
+              variant="contained"
+              onClick={handleSendOtp}
+            >
+              {loading ? <CircularProgress size={24} /> : 'Send OTP'}
+            </Button>
+          </>
+        ) : (
+          <>
+            <TextField
+              fullWidth
+              name="firstName"
+              label="First Name"
+              value={firstName}
+              onChange={(e) => setFirstName(e.target.value)}
+              InputLabelProps={{ shrink: true }}
+              InputProps={{
+                readOnly: true
+              }}
+              sx={{ mb: 3 }}
+            />
+            <TextField
+              fullWidth
+              name="lastName"
+              label="Last Name"
+              value={lastName}
+              onChange={(e) => setLastName(e.target.value)}
+              InputLabelProps={{ shrink: true }}
+              InputProps={{
+                readOnly: true
+              }}
+              sx={{ mb: 3 }}
+            />
+            <TextField
+              required
+              fullWidth
+              id="phoneNumber"
+              label="Phone Number"
+              variant="standard"
+              value={phoneNumber}
+              InputProps={{
+                readOnly: true
+              }}
+              sx={{ mb: 3 }}
+            />
+            <TextField
+              required
+              fullWidth
+              id="otp"
+              label="Enter Verification Code Sent to Your Phone"
+              variant="standard"
+              value={otp}
+              onChange={(e) => setOtp(e.target.value)}
+              sx={{ mt: 3, mb: 3 }}
+            />
+            <Button
+              fullWidth
+              size="large"
+              type="submit"
+              color="inherit"
+              variant="contained"
+              onClick={handleVerifyOtp}
+              disabled={loading || isProcessing}
+            >
+              {loading ? <CircularProgress size={24} /> : 'Verify OTP'}
+            </Button>
+          </>
+        )}
+        <div id="recaptcha-container" />
       </Box>
-
     </Box>
   );
 }
