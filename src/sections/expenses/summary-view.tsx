@@ -94,7 +94,7 @@ export function SummaryView() {
       {Object.keys(usersSpentAmounts).map((userId1) => {
         const user = tripUsers.find(us => us.guest_username === userId1);
         return (
-          <Card key={userId1} sx={{ mb: 2 }}>
+          <Card key={userId1} sx={{ mb: 2, backgroundColor: '#20C997', opacity: .8 }}>
             <CardContent>
               <Grid container spacing={2} alignItems="center">
                 <Grid item>
@@ -102,8 +102,8 @@ export function SummaryView() {
                 </Grid>
                 <Grid item xs>
                   <Typography variant="h6">{user ? formatUserName(user) : 'Unknown User'}</Typography>
-                  <Typography variant="body2" color="textSecondary">
-                    lent {displayAmount(usersSpentAmounts[userId1])}
+                  <Typography variant="body2" color="textSecondary" sx={{color: 'black'}}>
+                    Is Owed: {displayAmount(usersSpentAmounts[userId1])}
                   </Typography>
                 </Grid>
               </Grid>

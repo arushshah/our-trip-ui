@@ -149,7 +149,7 @@ export function NavContent({ data, slots, sx }: NavContentProps) {
                       }),
                     }}
                   >
-                    <Box component="span" sx={{ width: 24, height: 24 }}>
+                    <Box component="span" sx={{ width: 24, height: 24, color: '#00BFFF' }}>
                       {item.icon}
                     </Box>
 

@@ -30,11 +30,6 @@ export const navDataHomepage = [
     title: 'Product',
     path: '/products',
     icon: icon('ic-cart'),
-    info: (
-      <Label color="error" variant="inverted">
-        +3
-      </Label>
-    ),
   },
   {
     title: 'Blog',
@@ -47,41 +42,41 @@ export const getNavDataTrip = (tripId: string | null) => [
   {
     title: 'Trip Information',
     path: tripId ? `/view-trip/${tripId}` : '/',
-    icon: <InfoIcon />
+    icon: <InfoIcon sx={{color: '#00BFFF'}}/>
   },
   {
     title: 'Guests',
     path: tripId ? `/view-guests/${tripId}` : '/',
-    icon: <PeopleIcon />
+    icon: <PeopleIcon sx={{color: '#00BFFF'}}/>
   },
   {
     title: 'Travel Docs',
     path: tripId ? `/travel-docs/${tripId}` : '/',
-    icon: <FlightIcon />,
+    icon: <FlightIcon sx={{color: '#00BFFF'}}/>,
   },
   {
     title: 'Accommodation Docs',
     path: tripId ? `/accommodations/${tripId}` : '/',
-    icon: <HotelIcon />
+    icon: <HotelIcon sx={{color: '#00BFFF'}}/>
   },
   {
     title: 'Itinerary',
     path: tripId ? `/itinerary/${tripId}` : '/',
-    icon: <AutoStoriesIcon />
+    icon: <AutoStoriesIcon sx={{color: '#00BFFF'}}/>
   },
   {
     title: 'To-Do',
     path: tripId ? `/todo-list/${tripId}` : '/',
-    icon: <FormatListBulletedIcon />
+    icon: <FormatListBulletedIcon sx={{color: '#00BFFF'}}/>
   },
   {
     title: 'Locations',
     path: tripId ? `/saved-locations/${tripId}` : '/',
-    icon: <MapIcon />
+    icon: <MapIcon sx={{color: '#00BFFF'}}/>
   },
   {
     title: 'Expenses',
     path: tripId ? `/expenses/${tripId}` : '/',
-    icon: <PaidIcon />
+    icon: <PaidIcon sx={{color: '#00BFFF'}}/>
   },
 ];

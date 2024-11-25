@@ -20,7 +20,7 @@ declare module '@mui/material/styles' {
 
 // ----------------------------------------------------------------------
 
-export const defaultFont = 'DM Sans Variable';
+export const defaultFont = 'Barlow';
 
 export const primaryFont = setFont(defaultFont);
 

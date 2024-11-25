@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import {apiUrl} from 'src/config';
-import { Box, Typography, TextField, Button, FormControl, InputLabel, Select, MenuItem, SelectChangeEvent, InputAdornment, DialogActions, Dialog, DialogContent, DialogContentText, DialogTitle, RadioGroup, FormControlLabel, Radio } from '@mui/material';
+import { Box, Typography, TextField, Button, FormControl, InputLabel, Select, MenuItem, SelectChangeEvent, InputAdornment, DialogActions, Dialog, DialogContent, DialogContentText, DialogTitle, RadioGroup, FormControlLabel, Radio, CircularProgress } from '@mui/material';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { jwtDecode } from 'jwt-decode';
 import { useAuth } from 'src/context/AuthContext';
@@ -41,6 +41,8 @@ export function ViewTripView() {
   const [openNewHostDialog, setOpenNewHostDialog] = useState(false);
   const [selectedNewHost, setSelectedNewHost] = useState('');
   const {idToken} = useAuth();
+  const [loading, setLoading] = useState(true); // Add loading state
+
   
   const handleOpenDeleteDialog = () => {
     setOpenDeleteDialog(true);
@@ -179,9 +181,10 @@ export function ViewTripView() {
       }
     };
 
-    fetchTripDetails();
-    fetchGuestList();
-  }, [trip_id, idToken]);
+    Promise.all([fetchTripDetails(), fetchGuestList()])
+    .then(() => setLoading(false)) // Set loading to false after both complete
+    .catch((error) => console.error('Error fetching trip data:', error));
+}, [trip_id, idToken]);
 
   const handleEditClick = () => {
     navigate(`/update-trip/${trip_id}`, {
@@ -234,6 +237,25 @@ export function ViewTripView() {
     return <Typography>Loading...</Typography>;
   }
 
+  if (loading) {
+    return (
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          height: '100vh',
+          backgroundColor: '#222831',
+          color: '#EEEEEE',
+        }}
+      >
+        <CircularProgress sx={{ color: '#00BFFF' }} />
+        <Typography variant="h4" sx={{ ml: 2 }}>
+          Loading Trip Details...
+        </Typography>
+      </Box>
+    );
+  }
   return (
     <>
     <Box sx={{ p: 3, color: 'white', position: 'relative'}}>
