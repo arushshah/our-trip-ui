@@ -1,37 +1,61 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Box, Typography, TextField, Button, Collapse, IconButton, Dialog, DialogActions, DialogContent, DialogTitle, Checkbox, FormControlLabel, RadioGroup, Radio, Fab } from '@mui/material';
+import {
+  Box,
+  Typography,
+  TextField,
+  Button,
+  Collapse,
+  IconButton,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Checkbox,
+  FormControlLabel,
+  RadioGroup,
+  Radio,
+  Fab,
+} from '@mui/material';
 import { useParams } from 'react-router-dom';
 import { apiUrl, mapsKey } from 'src/config';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
+import EditIcon from '@mui/icons-material/Edit';
 import { useAuth } from 'src/context/AuthContext';
 
 // default unassigned category is not showing up fix it
 export default function LocationsView() {
   const { trip_id = '' } = useParams<{ trip_id: string }>();
   const [expanded, setExpanded] = useState<{ [key: string]: boolean }>({});
-  
-  const [categorizedData, setCategorizedData] = useState<{ [key: string]: any[] }>({ Unassigned: [] });
+
+  const [categorizedData, setCategorizedData] = useState<{ [key: string]: any[] }>({
+    Unassigned: [],
+  });
   const [newCategoryName, setNewCategoryName] = useState('');
   const mapRef = useRef<HTMLDivElement | null>(null);
   const [map, setMap] = useState<google.maps.Map | null>(null);
   const [autocomplete, setAutocomplete] = useState<google.maps.places.Autocomplete | null>(null);
   const markersRef = useRef<google.maps.Marker[]>([]);
-  const [selectedPlaceDetails, setSelectedPlaceDetails] = useState<any>(null);  // For storing selected place details
-  const [openDialog, setOpenDialog] = useState(false);  // For controlling the place details dialog
-  const [selectedPlaceName, setSelectedPlaceName] = useState('');  // For storing edited place name
-  const [selectedPlaceCategory, setSelectedPlaceCategory] = useState('');  // For category selection
-  const [isEditing, setIsEditing] = useState(false);  // Flag to indicate if we are editing an existing place
+  const [selectedPlaceDetails, setSelectedPlaceDetails] = useState<any>(null); // For storing selected place details
+  const [openDialog, setOpenDialog] = useState(false); // For controlling the place details dialog
+  const [selectedPlaceName, setSelectedPlaceName] = useState(''); // For storing edited place name
+  const [selectedPlaceCategory, setSelectedPlaceCategory] = useState('Unassigned'); // For category selection
+  const [isEditing, setIsEditing] = useState(false); // Flag to indicate if we are editing an existing place
   const [errorMessage, setErrorMessage] = useState<string>('');
-  const {idToken} = useAuth();
-  
+  const { idToken } = useAuth();
+  const [openEditCategoryDialog, setOpenEditCategoryDialog] = useState(false);
+  const [editingCategory, setEditingCategory] = useState('');
+  const [newCategoryNameEdit, setNewCategoryNameEdit] = useState('');
+  const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
+  const [categoryToDelete, setCategoryToDelete] = useState('');
+
   const handleEditPlace = useCallback(
-    (place: { name: string; lat: number; lng: number; place_id: string, category: string }) => {
+    (place: { name: string; lat: number; lng: number; place_id: string; category: string }) => {
       setSelectedPlaceDetails(place);
       setSelectedPlaceName(place.name);
-      setSelectedPlaceCategory(!place.category ? 'Unassigned' : place.category); // Ensure selectedCategory is stable
+      setSelectedPlaceCategory(place.category); // Ensure selectedCategory is stable
       setIsEditing(true);
       setOpenDialog(true);
     },
@@ -39,7 +63,6 @@ export default function LocationsView() {
   );
 
   const getLocations = useCallback(async () => {
-    console.log("TRIGGERED ")
     try {
       const response = await fetch(`${apiUrl}/trip_locations/get-locations?trip_id=${trip_id}`, {
         headers: {
@@ -48,10 +71,8 @@ export default function LocationsView() {
       });
 
       if (response.ok) {
-
         const data = await response.json();
         const location_entries = data.locations;
-        console.log(location_entries)
 
         if (map) {
           const newMarkers = location_entries.map((location: any) => {
@@ -79,36 +100,53 @@ export default function LocationsView() {
         const groupedCategories: { [key: string]: any[] } = {};
         location_entries.forEach((location: any) => {
           const { category } = location;
-          if (category) {
-            if (!groupedCategories[category]) {
-              groupedCategories[category] = [];
-            }
-            groupedCategories[category].push(location);
+          if (!groupedCategories[category]) {
+            groupedCategories[category] = [];
           }
-          else {
-            if (!groupedCategories.Unassigned) {
-              groupedCategories.Unassigned = [];
-            }
-            groupedCategories.Unassigned.push(location);
-          }
+          groupedCategories[category].push(location);
         });
-        console.log(groupedCategories)
 
-        setCategorizedData(groupedCategories);
+        setCategorizedData((prevCategories) => ({
+          ...prevCategories,
+          ...groupedCategories,
+        }));
       } else {
         console.error('Failed to fetch locations');
       }
     } catch (error) {
       console.error('Error fetching locations:', error);
-    }
-    finally {
-      setSelectedPlaceCategory(''); // Reset selected categories
+    } finally {
+      setSelectedPlaceCategory('Unassigned'); // Reset selected categories
     }
   }, [map, trip_id, handleEditPlace, idToken]);
-  
+
+  const handleEditCategoryName = (oldName: string, newName: string) => {
+    if (newName && oldName !== newName) {
+      // Update categorizedData with the new category name
+      const updatedData = { ...categorizedData };
+      updatedData[newName] = updatedData[oldName];
+      delete updatedData[oldName];
+      setCategorizedData(updatedData);
+
+      // Update the category name in the backend
+      fetch(`${apiUrl}/trip_locations/update-category`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${idToken}`, // Assuming you're using a token for authorization
+        },
+        body: JSON.stringify({ old_category_name: oldName, new_category_name: newName, trip_id }),
+      });
+    }
+  };
+
   useEffect(() => {
     const loadScript = () => {
-      if (!document.querySelector(`script[src="https://maps.googleapis.com/maps/api/js?key=${mapsKey}&libraries=places"]`)) {
+      if (
+        !document.querySelector(
+          `script[src="https://maps.googleapis.com/maps/api/js?key=${mapsKey}&libraries=places"]`
+        )
+      ) {
         const script = document.createElement('script');
         script.src = `https://maps.googleapis.com/maps/api/js?key=${mapsKey}&libraries=places`;
         script.async = true;
@@ -126,7 +164,7 @@ export default function LocationsView() {
         const googleMap = new google.maps.Map(mapRef.current, {
           center: { lat: 40.748817, lng: -73.985428 }, // Default to NYC
           zoom: 13,
-          scrollwheel: true,  // Ensure scroll zoom is enabled
+          scrollwheel: true, // Ensure scroll zoom is enabled
         });
 
         const input = document.getElementById('search-box') as HTMLInputElement;
@@ -148,17 +186,17 @@ export default function LocationsView() {
               name: place.name || 'Unnamed Location',
               lat: location.lat(),
               lng: location.lng(),
-              place_id: place.place_id,  // Store the place_id to fetch detailed info
+              place_id: place.place_id, // Store the place_id to fetch detailed info
               category: '',
               category_id: '',
             };
-            setSelectedPlaceName(newPlace.name);  // Set the name of the place to be added
-            setSelectedPlaceCategory(''); // Reset selected categories
+            setSelectedPlaceName(newPlace.name); // Set the name of the place to be added
+            setSelectedPlaceCategory('Unassigned'); // Reset selected categories
 
             // Show the dialog box
             setSelectedPlaceDetails(newPlace);
             setOpenDialog(true);
-            setIsEditing(false);  // We are adding a new place, not editing
+            setIsEditing(false); // We are adding a new place, not editing
           }
         });
 
@@ -179,13 +217,13 @@ export default function LocationsView() {
                 const place = results[0];
                 newPlace.place_id = place.place_id; // Assign the place_id
 
-                setSelectedPlaceName(newPlace.name);  // Set the name of the place to be added
-                setSelectedPlaceCategory(''); // Reset selected categories
+                setSelectedPlaceName(newPlace.name); // Set the name of the place to be added
+                setSelectedPlaceCategory('Unassigned'); // Reset selected categories
 
                 // Show the dialog box
                 setSelectedPlaceDetails(newPlace);
                 setOpenDialog(true);
-                setIsEditing(false);  // We are adding a new place, not editing
+                setIsEditing(false); // We are adding a new place, not editing
               } else {
                 console.error('Geocoder failed due to: ', status);
                 alert('Could not fetch location details. Please try again.');
@@ -209,34 +247,33 @@ export default function LocationsView() {
   }, [newCategoryName]);
 
   const handleLocationConfirmation = async () => {
-  
     const newLocationData = {
-      name: selectedPlaceName,
+      place_name: selectedPlaceName,
       lat: selectedPlaceDetails.lat,
       lng: selectedPlaceDetails.lng,
       place_id: selectedPlaceDetails.place_id,
-      category: selectedPlaceCategory === 'Unassigned' ? null : selectedPlaceCategory,
+      category_name: selectedPlaceCategory,
     };
-  
+
     console.log(newLocationData);
     if (!isEditing) {
-    // POST request to add location to the backend
+      // POST request to add location to the backend
       try {
         const response = await fetch(`${apiUrl}/trip_locations/add-location`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${idToken}`,  // Assuming you're using a token for authorization
+            Authorization: `Bearer ${idToken}`, // Assuming you're using a token for authorization
           },
-          body: JSON.stringify({...newLocationData, trip_id}),
+          body: JSON.stringify({ ...newLocationData, trip_id }),
         });
-    
+
         if (response.ok) {
           const responseData = await response.json();
           const newLocation = responseData.location;
 
           console.log('New location added:', newLocation);
-    
+
           // Add marker to the map
           if (map && newLocation) {
             const marker = new google.maps.Marker({
@@ -244,11 +281,11 @@ export default function LocationsView() {
               map,
               title: newLocation.name,
             });
-    
+
             markersRef.current.push(marker);
           }
-    
-          setOpenDialog(false);  // Close the dialog after successful addition
+
+          setOpenDialog(false); // Close the dialog after successful addition
         } else {
           const error = await response.json();
           setErrorMessage(error.message || 'Failed to add location');
@@ -256,9 +293,8 @@ export default function LocationsView() {
       } catch (error) {
         console.error('Error adding location:', error);
         setErrorMessage('An error occurred while adding the location. Please try again.');
-      }
-      finally {
-        setSelectedPlaceCategory(''); // Reset selected categories
+      } finally {
+        setSelectedPlaceCategory('Unassigned'); // Reset selected categories
       }
     } else {
       // PUT request to update location in the backend
@@ -267,15 +303,15 @@ export default function LocationsView() {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${idToken}`,  // Assuming you're using a token for authorization
+            Authorization: `Bearer ${idToken}`, // Assuming you're using a token for authorization
           },
           body: JSON.stringify({ ...newLocationData, trip_id }),
         });
-    
+
         if (response.ok) {
           console.log('Location updated successfully');
           getLocations();
-          setOpenDialog(false);  // Close the dialog after successful update
+          setOpenDialog(false); // Close the dialog after successful update
         } else {
           const error = await response.json();
           setErrorMessage(error.message || 'Failed to update location');
@@ -283,13 +319,12 @@ export default function LocationsView() {
       } catch (error) {
         console.error('Error updating location:', error);
         setErrorMessage('An error occurred while updating the location. Please try again.');
-      }
-      finally {
-        setSelectedPlaceCategory(''); // Reset selected categories
+      } finally {
+        setSelectedPlaceCategory('Unassigned'); // Reset selected categories
       }
     }
   };
-  
+
   // i need a handleDeleteLocationEntry function which will delete the location entry from the backend and remove the marker from the map and update the categorizedData state
   const handleDeleteLocationEntry = async () => {
     if (!selectedPlaceDetails) {
@@ -300,29 +335,31 @@ export default function LocationsView() {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${idToken}`,  // Assuming you're using a token for authorization
+          Authorization: `Bearer ${idToken}`, // Assuming you're using a token for authorization
         },
         body: JSON.stringify({ place_id: selectedPlaceDetails.place_id, trip_id }),
       });
-  
+
       if (response.ok) {
         console.log('Location deleted successfully');
         // Remove the marker from the map
-        console.log(markersRef.current)
+        console.log(markersRef.current);
         markersRef.current = markersRef.current.filter((marker) => {
           if (marker.getTitle() === selectedPlaceDetails.name) {
-            marker.setMap(null);  // Remove the marker from the map
-            return false;  // Filter out the marker
+            marker.setMap(null); // Remove the marker from the map
+            return false; // Filter out the marker
           }
           return true;
         });
-  
+
         // Update categorizedData state
         const updatedCategories = { ...categorizedData };
-        updatedCategories[selectedPlaceDetails.category] = updatedCategories[selectedPlaceDetails.category].filter((location: any) => location.place_id !== selectedPlaceDetails.place_id);
+        updatedCategories[selectedPlaceDetails.category] = updatedCategories[
+          selectedPlaceDetails.category
+        ].filter((location: any) => location.place_id !== selectedPlaceDetails.place_id);
         setCategorizedData(updatedCategories);
-  
-        setOpenDialog(false);  // Close the dialog after successful deletion
+
+        setOpenDialog(false); // Close the dialog after successful deletion
       } else {
         const error = await response.json();
         setErrorMessage(error.message || 'Failed to delete location');
@@ -330,24 +367,26 @@ export default function LocationsView() {
     } catch (error) {
       console.error('Error deleting location:', error);
       setErrorMessage('An error occurred while deleting the location. Please try again.');
-    }
-    finally {
-      setSelectedPlaceCategory(''); // Reset selected categories
+    } finally {
+      setSelectedPlaceCategory('Unassigned'); // Reset selected categories
     }
   };
 
   const toggleCategoryExpanded = (category: string) => {
-    setExpanded(prev => ({
+    setExpanded((prev) => ({
       ...prev,
       [category]: !prev[category],
     }));
   };
 
   const toggleAllExpanded = (expand: boolean) => {
-    const newExpandedState = Object.keys(categorizedData).reduce((acc, category) => {
-      acc[category] = expand;
-      return acc;
-    }, {} as { [key: string]: boolean });
+    const newExpandedState = Object.keys(categorizedData).reduce(
+      (acc, category) => {
+        acc[category] = expand;
+        return acc;
+      },
+      {} as { [key: string]: boolean }
+    );
     setExpanded(newExpandedState);
   };
 
@@ -358,16 +397,15 @@ export default function LocationsView() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${idToken}`,  // Assuming you're using a token for authorization
+          Authorization: `Bearer ${idToken}`, // Assuming you're using a token for authorization
         },
-        body: JSON.stringify({category: newCategoryName, trip_id}),
+        body: JSON.stringify({ category: newCategoryName, trip_id }),
       });
     } catch (error) {
       console.error('Error adding category:', error);
       setErrorMessage('An error occurred while adding the location. Please try again.');
     }
     getLocations();
-    
   };
 
   const handleDeleteCategory = async (category: string) => {
@@ -375,15 +413,15 @@ export default function LocationsView() {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${idToken}`,  // Assuming you're using a token for authorization
+        Authorization: `Bearer ${idToken}`, // Assuming you're using a token for authorization
       },
-      body: JSON.stringify({category, trip_id}),
+      body: JSON.stringify({ category_name: category, trip_id }),
     })
-    .then(() => getLocations())
-    .catch((error) => {
-      console.error('Error deleting category:', error);
-      setErrorMessage('An error occurred while deleting the category. Please try again.');
-    });
+      .then(() => getLocations())
+      .catch((error) => {
+        console.error('Error deleting category:', error);
+        setErrorMessage('An error occurred while deleting the category. Please try again.');
+      });
     getLocations();
   };
 
@@ -392,7 +430,7 @@ export default function LocationsView() {
       map.setCenter({ lat: place.lat, lng: place.lng });
       map.setZoom(18);
     }
-  }
+  };
 
   useEffect(() => {
     if (map) {
@@ -402,12 +440,26 @@ export default function LocationsView() {
 
   return (
     <>
-      <Box sx={{ minHeight: '100vh', backgroundColor: '#222831', color: '#EEEEEE', padding: 3, overflowY: 'auto' }}>
+      <Box
+        sx={{
+          minHeight: '100vh',
+          backgroundColor: '#222831',
+          color: '#EEEEEE',
+          padding: 3,
+          overflowY: 'auto',
+        }}
+      >
         <Typography variant="h2" sx={{ mb: 2 }}>
           Saved Locations
         </Typography>
 
-        <TextField id="search-box" label="Search for places" fullWidth variant="outlined" sx={{ mb: 2 }} />
+        <TextField
+          id="search-box"
+          label="Search for places"
+          fullWidth
+          variant="outlined"
+          sx={{ mb: 2 }}
+        />
 
         <div ref={mapRef} style={{ width: '100%', height: '500px' }} />
         <br />
@@ -461,107 +513,195 @@ export default function LocationsView() {
             Collapse All
           </Button>
         </Box>
-        {Object.keys(categorizedData).map((category) => (
-          <Box key={category} sx={{ mt: 2 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              <Typography
-                variant="h6"
-                sx={{ flexGrow: 1, cursor: 'pointer' }}
-                onClick={() => toggleCategoryExpanded(category)}  // Add onClick for category name
-              >
-                {category}
-              </Typography>
-              {category !== 'Unassigned' && (
-                <IconButton onClick={() => handleDeleteCategory(category)}>
-                  <DeleteIcon sx={{ color: '#FF4F00' }} />
-                </IconButton>
-              )}
-              <IconButton onClick={() => toggleCategoryExpanded(category)}>
-                {expanded[category] ? <ExpandLessIcon /> : <ExpandMoreIcon />}
-              </IconButton>
-            </Box>
-
-            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', ml: 2 }}>
-              <Collapse in={expanded[category]}>
-                {categorizedData[category].map((place: any) => (
-                  <Box
-                  key={place.place_id}
-                  sx={{
-                    mt: 1,
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    cursor: 'pointer',
-                    padding: '8px 16px',
-                    borderRadius: '4px',
-                    '&:hover': {
-                      backgroundColor: '#444851',
-                    },
-                  }}
-                  onClick={() => handlePlaceEntryClick(place)}
-                >
+        {Object.keys(categorizedData).map(
+          (category) =>
+            categorizedData[category].length > 0 && (
+              <Box key={category} sx={{ mt: 2 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center' }}>
                   <Typography
                     variant="h6"
-                    sx={{
-                      color: '#ffffff',
-                      fontWeight: 'bold',
-                      textShadow: '1px 1px 2px rgba(0, 0, 0, 0.5)',
-                    }}
+                    sx={{ flexGrow: 1, cursor: 'pointer' }}
+                    onClick={() => toggleCategoryExpanded(category)} // Add onClick for category name
                   >
-                    {place.name}
+                    {category}
                   </Typography>
+
+                  {category !== 'Unassigned' && (
+                    <>
+                      <IconButton
+                        onClick={() => {
+                          setEditingCategory(category);
+                          setNewCategoryNameEdit(category);
+                          setOpenEditCategoryDialog(true);
+                        }}
+                        size="small"
+                        sx={{ marginRight: 1 }}
+                      >
+                        <EditIcon sx={{ color: '#00BFFF' }} />
+                      </IconButton>
+
+                      <IconButton
+                        onClick={() => {
+                          setCategoryToDelete(category);
+                          setOpenDeleteDialog(true);
+                        }}
+                        size="small"
+                      >
+                        <DeleteIcon sx={{ color: '#FF4F00' }} />
+                      </IconButton>
+                    </>
+                  )}
+
+                  <IconButton onClick={() => toggleCategoryExpanded(category)}>
+                    {expanded[category] ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+                  </IconButton>
                 </Box>
-                ))}
-              </Collapse>
-            </Box>
-          </Box>
-        ))}
+
+                <Box
+                  sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', ml: 2 }}
+                >
+                  <Collapse in={expanded[category]}>
+                    {categorizedData[category]
+                      .filter((place) => place.place_id && place.name)
+                      .map((place: any) => (
+                        <Box
+                          key={place.place_id}
+                          sx={{
+                            mt: 1,
+                            display: 'flex',
+                            alignItems: 'center',
+                            cursor: 'pointer',
+                            padding: '8px 16px',
+                            borderRadius: '4px',
+                            '&:hover': {
+                              backgroundColor: '#444851',
+                            },
+                          }}
+                        >
+                          <IconButton
+                            size="small"
+                            sx={{ marginRight: 2 }}
+                            onClick={(e) => {
+                              e.stopPropagation(); // Prevent triggering the parent `onClick`
+                              handleEditPlace(place); // Open the dialog for editing
+                            }}
+                          >
+                            <EditIcon sx={{ color: '#00BFFF' }} />
+                          </IconButton>
+                          <Typography
+                            variant="h6"
+                            sx={{
+                              color: '#ffffff',
+                              fontWeight: 'bold',
+                              textShadow: '1px 1px 2px rgba(0, 0, 0, 0.5)',
+                            }}
+                            onClick={() => handlePlaceEntryClick(place)} // Clicking the name centers the map
+                          >
+                            {place.name}
+                          </Typography>
+                        </Box>
+                      ))}
+                  </Collapse>
+                </Box>
+              </Box>
+            )
+        )}
       </Box>
 
       <Dialog open={openDialog} onClose={() => setOpenDialog(false)}>
-      <DialogTitle>{isEditing ? 'Edit Location' : 'Add Location'}</DialogTitle>
-      <DialogContent>
-        <TextField
-          label="Place Name"
-          value={selectedPlaceName}
-          onChange={(e) => setSelectedPlaceName(e.target.value)}
-          fullWidth
-          variant="outlined"
-          sx={{ mb: 2, marginTop: '10px' }}
-        />
-        {errorMessage && <Typography color="error">{errorMessage}</Typography>}
-        <div>
-          <Typography variant='subtitle2'>Select Category</Typography>
-          <RadioGroup
-            value={selectedPlaceCategory === '' ? 'Unassigned' : selectedPlaceCategory}
-            onChange={(event) => setSelectedPlaceCategory(event.target.value)}
-          >
-            {Object.keys(categorizedData).map((category) => (
-              <FormControlLabel
-                key={category}
-                value={category}
-                control={<Radio />}
-                label={category}
-              />
-            ))}
-          </RadioGroup>
-        </div>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={() => setOpenDialog(false)} color="secondary">
-          Cancel
-        </Button>
-        <Button onClick={handleLocationConfirmation} color="primary">
-          {isEditing ? 'Save Changes' : 'Add Location'}
-        </Button>
-
-        {isEditing && (
-          <Button onClick={handleDeleteLocationEntry} color="error">
-            Delete Location
+        <DialogTitle>{isEditing ? 'Edit Location' : 'Add Location'}</DialogTitle>
+        <DialogContent>
+          <TextField
+            label="Place Name"
+            value={selectedPlaceName}
+            onChange={(e) => setSelectedPlaceName(e.target.value)}
+            fullWidth
+            variant="outlined"
+            sx={{ mb: 2, marginTop: '10px' }}
+          />
+          {errorMessage && <Typography color="error">{errorMessage}</Typography>}
+          <div>
+            <Typography variant="subtitle2">Select Category</Typography>
+            <RadioGroup
+              value={selectedPlaceCategory}
+              onChange={(event) => setSelectedPlaceCategory(event.target.value)}
+            >
+              {Object.keys(categorizedData).map((category) => (
+                <FormControlLabel
+                  key={category}
+                  value={category}
+                  control={<Radio />}
+                  label={category}
+                />
+              ))}
+            </RadioGroup>
+          </div>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenDialog(false)} color="secondary">
+            Cancel
           </Button>
-        )}
-      </DialogActions>
-    </Dialog>
+          <Button onClick={handleLocationConfirmation} color="primary">
+            {isEditing ? 'Save Changes' : 'Add Location'}
+          </Button>
+
+          {isEditing && (
+            <Button onClick={handleDeleteLocationEntry} color="error">
+              Delete Location
+            </Button>
+          )}
+        </DialogActions>
+      </Dialog>
+      <Dialog open={openEditCategoryDialog} onClose={() => setOpenEditCategoryDialog(false)}>
+        <DialogTitle>Edit Category</DialogTitle>
+        <DialogContent>
+          <TextField
+            label="Category Name"
+            value={newCategoryNameEdit}
+            onChange={(e) => setNewCategoryNameEdit(e.target.value)}
+            fullWidth
+            variant="outlined"
+            sx={{ marginTop: 2 }}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenEditCategoryDialog(false)} color="secondary">
+            Cancel
+          </Button>
+          <Button
+            onClick={() => {
+              handleEditCategoryName(editingCategory, newCategoryNameEdit);
+              setOpenEditCategoryDialog(false);
+            }}
+            color="primary"
+          >
+            Save Changes
+          </Button>
+        </DialogActions>
+      </Dialog>
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={openDeleteDialog} onClose={() => setOpenDeleteDialog(false)}>
+        <DialogTitle>Confirm Deletion</DialogTitle>
+        <DialogContent>
+          <Typography>
+            Are you sure you want to delete the category <strong>{categoryToDelete}</strong>?
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenDeleteDialog(false)} color="secondary">
+            Cancel
+          </Button>
+          <Button
+            onClick={() => {
+              handleDeleteCategory(categoryToDelete);
+              setOpenDeleteDialog(false);
+            }}
+            color="error"
+          >
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
     </>
   );
 }
