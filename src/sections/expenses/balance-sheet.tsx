@@ -193,11 +193,11 @@ export function BalanceSheet() {
     <>
         <List>
           {expenses.map((expense) => (
-            <Card key={expense.expenseId} onClick={() => handleOpenDialog(expense)} sx={{ mb: 2, cursor: 'pointer' }}>
+            <Card key={expense.expenseId} onClick={() => handleOpenDialog(expense)} sx={{ mb: 2, cursor: 'pointer', opacity: .8 }}>
               <CardContent>
                 <Typography variant="h6">{expense.title}</Typography>
                 <Typography variant="body2">Amount: {formatDollarValue(expense.amount)}</Typography>
-                <Typography variant="body2">Payer: {expense.userFirstName} {expense.userLastName}</Typography>
+                <Typography variant="body2">Paid By: {expense.userFirstName} {expense.userLastName}</Typography>
               </CardContent>
             </Card>
           ))}

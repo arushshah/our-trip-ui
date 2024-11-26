@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import {apiUrl} from 'src/config';
-import { Box, Typography, TextField, Button, FormControl, InputLabel, Select, MenuItem, SelectChangeEvent, InputAdornment, DialogActions, Dialog, DialogContent, DialogContentText, DialogTitle, RadioGroup, FormControlLabel, Radio } from '@mui/material';
+import { Box, Typography, TextField, Button, FormControl, InputLabel, Select, MenuItem, SelectChangeEvent, InputAdornment, DialogActions, Dialog, DialogContent, DialogContentText, DialogTitle, RadioGroup, FormControlLabel, Radio, CircularProgress } from '@mui/material';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { jwtDecode } from 'jwt-decode';
 import { useAuth } from 'src/context/AuthContext';
@@ -46,6 +46,8 @@ export function ViewTripView() {
   // TODO: Add validation to ensure that a new host is chosen when the host wants to leave the trip - right now if there are no other users to pick as hosts it causes issues
 
   // TODO: handle the case for host leaving the trip and there are no users left - trip should be deleted
+  const [loading, setLoading] = useState(true); // Add loading state
+
   
   const handleOpenDeleteDialog = () => {
     setOpenDeleteDialog(true);
@@ -184,9 +186,10 @@ export function ViewTripView() {
       }
     };
 
-    fetchTripDetails();
-    fetchGuestList();
-  }, [trip_id, idToken]);
+    Promise.all([fetchTripDetails(), fetchGuestList()])
+    .then(() => setLoading(false)) // Set loading to false after both complete
+    .catch((error) => console.error('Error fetching trip data:', error));
+}, [trip_id, idToken]);
 
   const handleEditClick = () => {
     navigate(`/update-trip/${trip_id}`, {
@@ -239,6 +242,25 @@ export function ViewTripView() {
     return <Typography>Loading...</Typography>;
   }
 
+  if (loading) {
+    return (
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          height: '100vh',
+          backgroundColor: '#222831',
+          color: '#EEEEEE',
+        }}
+      >
+        <CircularProgress sx={{ color: '#00BFFF' }} />
+        <Typography variant="h4" sx={{ ml: 2 }}>
+          Loading Trip Details...
+        </Typography>
+      </Box>
+    );
+  }
   return (
     <>
     <Box sx={{ p: 3, color: 'white', position: 'relative'}}>

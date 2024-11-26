@@ -37,7 +37,7 @@ export default function GuestView({ trip_id, show_invited_guests }: GuestViewPro
   const [loading, setLoading] = useState<boolean>(true);
   const [openDialog, setOpenDialog] = useState<boolean>(false);
   const [guestToDelete, setGuestToDelete] = useState<string | null>(null);
-  const {idToken} = useAuth();
+  const { idToken } = useAuth();
 
   const fetchTripDetails = useCallback(async () => {
     try {
@@ -54,11 +54,10 @@ export default function GuestView({ trip_id, show_invited_guests }: GuestViewPro
         data.guests = data.guests.filter((guest: Guest) => guest.rsvp_status === 'YES' || guest.rsvp_status === "MAYBE");
       }
       setGuests(data.guests);
-      setLoading(false);
-      console.log(data.guests);
     } catch (error) {
       console.error('Error fetching trip details:', error);
-      setLoading(false);
+    } finally {
+      setLoading(false); // Set loading to false once data is fetched
     }
   }, [trip_id, show_invited_guests, idToken]);
 
@@ -67,7 +66,6 @@ export default function GuestView({ trip_id, show_invited_guests }: GuestViewPro
   }, [fetchTripDetails]);
 
   const handleDelete = async (guest_username: string) => {
-    console.log(guest_username);
     try {
       await axios.delete(`${apiUrl}/trip_guests/delete-trip-guest`, {
         headers: {
@@ -83,7 +81,6 @@ export default function GuestView({ trip_id, show_invited_guests }: GuestViewPro
   };
 
   const handleOpenDialog = (guest_username: string) => {
-    console.log(guest_username);
     setGuestToDelete(guest_username);
     setOpenDialog(true);
   };
@@ -92,6 +89,26 @@ export default function GuestView({ trip_id, show_invited_guests }: GuestViewPro
     setOpenDialog(false);
     setGuestToDelete(null);
   };
+
+  if (loading) {
+    return (
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          height: '100vh',
+          backgroundColor: '#222831',
+          color: '#EEEEEE',
+        }}
+      >
+        <CircularProgress sx={{ color: '#00BFFF' }} />
+        <Typography variant="h4" sx={{ ml: 2 }}>
+          Loading Guest Info...
+        </Typography>
+      </Box>
+    );
+  }
 
   return (
     <>
@@ -119,13 +136,13 @@ export default function GuestView({ trip_id, show_invited_guests }: GuestViewPro
                   </TableCell>
                   <TableCell>
                     {!guest.is_host &&
-                    <IconButton
-                      aria-label="delete"
-                      onClick={() => handleOpenDialog(guest.guest_username)}
-                      sx={{ color: 'error.main' }}
-                    >
-                      <Typography variant="h6">X</Typography>
-                    </IconButton>
+                      <IconButton
+                        aria-label="delete"
+                        onClick={() => handleOpenDialog(guest.guest_username)}
+                        sx={{ color: 'error.main' }}
+                      >
+                        <Typography variant="h6">X</Typography>
+                      </IconButton>
                     }
                   </TableCell>
                 </TableRow>
