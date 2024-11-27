@@ -290,6 +290,7 @@ export default function LocationsView() {
     }
   };
   
+  // TODO: doublecheck update location - the json params passed dont match with how the backend is extracting them
   // i need a handleDeleteLocationEntry function which will delete the location entry from the backend and remove the marker from the map and update the categorizedData state
   const handleDeleteLocationEntry = async () => {
     if (!selectedPlaceDetails) {
