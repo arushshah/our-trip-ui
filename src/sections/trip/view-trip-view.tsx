@@ -21,6 +21,7 @@ interface Guest {
   rsvp_status: string;
 }
 
+// TODO: disable edit button for guests, and disable actions for guests who have not rsvpd
 export function ViewTripView() {
   const { trip_id = '' } = useParams<{ trip_id: string }>();
   const [guestInfo, setGuestInfo] = useState<Guest>();
@@ -41,6 +42,10 @@ export function ViewTripView() {
   const [openNewHostDialog, setOpenNewHostDialog] = useState(false);
   const [selectedNewHost, setSelectedNewHost] = useState('');
   const {idToken} = useAuth();
+
+  // TODO: Add validation to ensure that a new host is chosen when the host wants to leave the trip - right now if there are no other users to pick as hosts it causes issues
+
+  // TODO: handle the case for host leaving the trip and there are no users left - trip should be deleted
   const [loading, setLoading] = useState(true); // Add loading state
 
   
@@ -217,14 +222,14 @@ export function ViewTripView() {
 
   const handleLeaveClick = async () => {
     try {
-      await fetch(`${apiUrl}/trip_guests/delete-trip-guest`, {
+      await fetch(`${apiUrl}/trip_guests/leave-trip`, {
         method: 'DELETE',
         headers: {
           Authorization: `Bearer ${idToken}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          trip_id,
+          trip_id
         }),
       });
       navigate('/home'); // Redirect to trips list page

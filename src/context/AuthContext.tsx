@@ -10,6 +10,8 @@ interface User {
   lastName: string;
   userId: string;
   phoneNumber: string;
+  isCurrentTripHost: null | boolean;
+  rsvpStatus: null | string;
 }
 
 interface AuthContextProps {
@@ -79,7 +81,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = React.memo(({ children 
 
           const data = await response.json();
           if (response.status === 200) {
-            setUser({firstName: data.firstName, lastName: data.lastName, userId: data.id, phoneNumber: data.phoneNumber});
+            setUser({firstName: data.firstName, lastName: data.lastName, userId: data.id, phoneNumber: data.phoneNumber, isCurrentTripHost: null, rsvpStatus: null});
           } else {
             console.error('User entry does not exist in the database.');
             setUser(null);

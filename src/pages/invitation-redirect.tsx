@@ -19,7 +19,7 @@ const InvitationRedirect: React.FC = () => {
         const response = await fetch(`${apiUrl}/trip_guests/accept-invite`, {
           method: 'POST',
           headers: {
-            Authorization: `Bearer ${idToken}}`,
+            Authorization: `Bearer ${idToken}`,
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
